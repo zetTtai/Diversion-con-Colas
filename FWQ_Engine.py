@@ -27,39 +27,35 @@ def send(msg, client):
 # Función que se encarga de actualizar el mapa según el movimiento recibido por argumentos
 def handle_client(conn, addr, ADDR_KAFKA):
     print(f"[NUEVA CONEXION] {addr} connected.")
-    connected = True
-    while connected:
+    while True:
         # msg contiene el movimiento realizado por el Visitante
         msg_length = conn.recv(HEADER).decode(FORMAT)
         if msg_length:
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
-
             print(f" He recibido del servidor de colas [{addr}] el mensaje:\n{msg}")
-            # TODO: Actualizar mapa
-            # TODO: Quitar msg == FIN (Es automático)
-            if msg == FIN:
-                connected = False
-            else:
-                print("Enviando mapa actualizado...")
-                connectToKAFKA(ADDR_KAFKA, msg)
-                # TODO: conn y addr tienen que ser los de FAKFA?
-                # conn.send(f"{msg}".encode(FORMAT))
 
+            # TODO: Actualizar mapa
+            # TODO: conn y addr tienen que ser los de FAKFA?
+            print("Enviando mapa actualizado...")
+            # connectToKAFKA(ADDR_KAFKA, msg)
+            # conn.send(f"{msg}".encode(FORMAT))
+        break
     print("ADIOS. TE ESPERO EN OTRA OCASION")
     conn.close()
 
+# TODO: Streaming & QM??
 # Función que se encarga de concetar con el gestor de colas y enviarle el mapa actualizado
-def connectToKAFKA(ADDR_KAFKA, msg): # (CLIENTE de KAFKA)
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(ADDR_KAFKA)
-    print (f"Establecida conexión en [{ADDR}]")
-    # TODO: Enviar a Kafka el mapa actualizado
-    while msg != FIN:
-        print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-        msg = input()
-    send(FIN, client)
-    client.close()
+# def connectToKAFKA(ADDR_KAFKA, msg):
+#     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     client.connect(ADDR_KAFKA)
+#     print (f"Establecida conexión en [{ADDR}]")
+#     # TODO: Enviar a Kafka el mapa actualizado
+#     while msg != FIN:
+#         print("SERVIDR: ", client.recv(2048).decode(FORMAT))
+#         msg = input()
+#     send(FIN, client)
+#     client.close()
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectToSTE(ADDR_STE): # (CLIENTE de STE)
@@ -80,14 +76,12 @@ def start(ADDR_KAFKA, ADDR_STE, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     CONEX_ACTIVAS = threading.active_count()-1
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
-    print("wtf")
     start = time.time()
-    print("wtf")
     while True:
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
         if (round((time.time() - start)) == XSEC):
             connectToSTE(ADDR_STE)
-            start = time.time()
+            start = time.time() # Reseteamos el timer
 
         conn, addr = server.accept()
         CONEX_ACTIVAS = threading.active_count()
