@@ -1,6 +1,6 @@
 import sys
 import time
-from kafka import KafkaConsumer #pip install kafka-python
+from kafka import KafkaProducer #pip install kafka-python
 
 HEADER = 64
 PORT = 5050
@@ -21,12 +21,15 @@ if  (len(sys.argv) == 4):
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
         if (round((time.time() - start)) == XSEC):
             
-            # TODO: Cómo obtener el número de personas en la ID_Atracción?
+            # TODO: Cómo obtener el número de personas en la ID_Atracción? => Te lo inventas
 
-            consumer = KafkaConsumer('sensor')
-            for message in consumer:
-                # TODO: Enviar el número de personas que se encuentran en la atracción correspondiente a ID
-                print(message)
+            print(f'SENSOR[{ID}]: Seleccione opción:')
+            print("1. Escribe '+' para aumentar en 10 el número de visitantes.")
+            print("2. Escribe '-' para aumentar en 10 el número de visitantes.")
+            print("3. ")
+
+            producer = KafkaProducer(bootstrap_servers=f'{SERVER}:{PORT}')
+            
             print('Finalizando conexión...')
             start = time.time() # Reseteamos el timer
 else:
