@@ -30,12 +30,41 @@ def createVisitor(msg):
     conn.close()
     return True
 
-def editVisitor(msg):
+def editVisitor(msg): 
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    # ID no se puede cambiar
+    # Los atributos que no se editan se declaran como "-" en el mensaje
+    if(msg[2] != "-"): # Actualizar nombre
+        try:
+            cursor.execute(f'UPDATE visitantes SET name = "{msg[2]}" where id = {msg[1]}')
+            conn.commit()
+        except sqlite3.Error as er:
+            print('SQLite error: %s' % (' '.join(er.args)))
+            print("Exception class is: ", er.__class__)
+            print('SQLite traceback: ')
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print(traceback.format_exception(exc_type, exc_value, exc_tb))
+            conn.close()
+            return False
+
+    if(msg[3] != "-"): # Actualizar contraseña
+        try:
+            cursor.execute(f'UPDATE visitantes SET password = "{msg[3]}" where id = {msg[1]}')
+            conn.commit()
+        except sqlite3.Error as er:
+            print('SQLite error: %s' % (' '.join(er.args)))
+            print("Exception class is: ", er.__class__)
+            print('SQLite traceback: ')
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print(traceback.format_exception(exc_type, exc_value, exc_tb))
+            conn.close()
+            return False
 
     print(f"Cerrando conexión con la base de datos")
     conn.close()
+    return True
 
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
@@ -49,18 +78,20 @@ def handle_client(conn, addr):
             
             msg = msg.split(" ")
             if(msg.len() == 4):
-                if(msg[0] == "create"): # msg= "create ID/Pasword Nombre Password"
+                if(msg[0] == "create"): # msg= "create ID/Alias Nombre Password"
                     print("Creando perfil de visitante...")
                     if(createVisitor(msg)):
                         print("¡Hecho!") 
                         conn.send("Perfil creado correctamente".encode(FORMAT))
                     else:
                         conn.send("No se ha podido crear el perfil, pruebe con otro ID/Alias".encode(FORMAT))
-                elif(msg[0] == "edit"): # msg= "edit ID/Pasword Nombre Password"
+                elif(msg[0] == "edit"): # msg= "edit ID/Alias Nombre Password"
                     print("Editando perfil de visitante...")
-
-                    print("¡Hecho!")
-                    conn.send("Perfil editado correctamente".encode(FORMAT))
+                    if(editVisitor(msg)):
+                        print("¡Hecho!")
+                        conn.send("Perfil editado correctamente".encode(FORMAT))
+                    else:
+                        conn.send("No se ha podido editar el perfil.".encode(FORMAT))
                 else:
                     conn.send(f"ERROR: La opción {msg[0]} no es válida.\nOPCIONES: [create | edit]".encode(FORMAT))
             else:
