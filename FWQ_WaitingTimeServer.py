@@ -1,7 +1,6 @@
 import socket 
 import sys
 import threading
-import fileinput
 
 HEADER = 64
 # TODO: cambiar?
@@ -10,14 +9,14 @@ FORMAT = 'utf-8'
 FILE = "DATA.txt"
 
 # Función para calcular el timepo de espera
-def calculateWaitTime(tiempo, visitanes):
+def calculateWaitTime(tiempo, visitantes):
     return 0
 
 # Función que escribe en el fichero donde se guardan los datos de las atracciones
 def writeFile(msg):
     # Cada línea corresponde a una atracción y cada línea tiene el formato de: ID tiempo_ciclo nº_visitantes
     # Si ya existía entonces se actualiza la linea, en caso contrario se añade al final
-    msg = msg.split(' ')
+    msg = msg.split(' ') # "ID nºvisitantes"
     fichero = open(FILE, "r")
     list_of_lines = fichero.readlines()
     fichero.close()
@@ -26,7 +25,15 @@ def writeFile(msg):
     for i, line in enumerate(list_of_lines):
         if line.startswith(msg[0]):
             existe= True
-            list_of_lines[i] = msg[0] + ' ' + msg[1] + '\n'
+            info = list_of_lines[i]
+            info = info.split(' ') # ID tiempo_ciclo nº_visitantes
+            if msg[2] == "+":
+                visitantes = int(info[2]) + int(msg[1])# Sumamos los visitantes antiguos + los nuevos
+            else:
+                visitantes = int(info[2]) - int(msg[1]) # Sumamos los visitantes antiguos + los nuevos
+                if(visitantes < 0): 
+                    visitantes = 0
+            list_of_lines[i] = msg[0] + ' ' + visitantes + '\n'
     
     fichero = open(FILE, "w")
     if(existe):
