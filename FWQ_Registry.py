@@ -73,7 +73,6 @@ def handle_client(conn, addr):
         if msg_length:
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
-
             print(f" He recibido del cliente [{addr}] el mensaje: {msg}")
             
             msg = msg.split(" ")
@@ -93,7 +92,7 @@ def handle_client(conn, addr):
                     else:
                         conn.send("No se ha podido editar el perfil.".encode(FORMAT))
                 else:
-                    conn.send(f"ERROR: La opción {msg[0]} no es válida.\nOPCIONES: [create | edit]".encode(FORMAT))
+                    conn.send(f"ERROR: La opción '{msg[0]}' no es válida.\nOPCIONES: [create | edit]".encode(FORMAT))
             else:
                 conn.send(f"ERROR: Formato del mensaje incorrecto.\n[OPCION(create/edit)] [ID/ALIAS] [NOMBRE] [PASSWORD]".encode(FORMAT))
             break;

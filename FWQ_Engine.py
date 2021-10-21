@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 import sqlite3
+import traceback
 
 HEADER = 64
 # TODO: cambiar?
@@ -45,29 +46,37 @@ def handle_client(conn, addr, ADDR_KAFKA):
     print("ADIOS. TE ESPERO EN OTRA OCASION")
     conn.close()
 
-# TODO: Streaming & QM??
-# Función que se encarga de concetar con el gestor de colas y enviarle el mapa actualizado
-# def connectToKAFKA(ADDR_KAFKA, msg):
-#     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     client.connect(ADDR_KAFKA)
-#     print (f"Establecida conexión en [{ADDR}]")
-#     # TODO: Enviar a Kafka el mapa actualizado
-#     while msg != FIN:
-#         print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-#         msg = input()
-#     send(FIN, client)
-#     client.close()
+def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+
+    msg =  msg.split(' ')
+    for info in msg:
+        info = info.split('-')
+        try:
+            cursor.execute(f'UPDATE atracciones SET wait_time = "{info[1]}" where id = {info[0]}')
+            conn.commit()
+        except sqlite3.Error as er:
+            print('SQLite error: %s' % (' '.join(er.args)))
+            print("Exception class is: ", er.__class__)
+            print('SQLite traceback: ')
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print(traceback.format_exception(exc_type, exc_value, exc_tb))
+
+    conn.close()
+
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR_STE)
     print (f"Establecida conexión en [{ADDR}]")
-    msg = ""
     # TODO: Recibir mensaje de STE y actualizar tiempos de espera de la Base de Datos
-    while msg != FIN:
-        print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-        msg = input()
+    while True:
+        # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
+        actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
+        break;
     send(FIN, client)
     client.close()
 
