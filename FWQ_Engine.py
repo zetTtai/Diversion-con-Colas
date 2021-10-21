@@ -2,6 +2,7 @@ import socket
 import sys
 import threading
 import time
+import sqlite3
 
 HEADER = 64
 # TODO: cambiar?

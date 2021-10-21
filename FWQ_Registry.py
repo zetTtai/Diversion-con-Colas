@@ -1,6 +1,7 @@
 import socket 
 import threading
 import sys
+import sqlite3
 
 HEADER = 64
 SERVER = socket.gethostbyname(socket.gethostname())
