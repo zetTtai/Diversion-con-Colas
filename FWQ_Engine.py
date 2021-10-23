@@ -1,6 +1,5 @@
 import socket 
 import sys
-import threading
 import time
 import sqlite3
 import traceback
@@ -26,22 +25,6 @@ def send(msg, client):
     client.send(send_length)
     client.send(message)
 
-def handle_client(conn, addr):
-    print(f"[NUEVA CONEXION] {addr} connected.")
-    while True:
-        # msg contiene el movimiento realizado por el Visitante
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            print(f" He recibido del servidor de colas [{addr}] el mensaje:\n{msg}")
-
-            # TODO: Actualizar mapa
-            print("Enviando mapa actualizado...")
-        break
-    print("ADIOS. TE ESPERO EN OTRA OCASION")
-    conn.close()
-
 def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
@@ -60,7 +43,7 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
             exc_type, exc_value, exc_tb = sys.exc_info()
             print(traceback.format_exception(exc_type, exc_value, exc_tb))
 
-    conn.close()
+    conn.close() # Cerramos base de datos
 
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
@@ -73,6 +56,47 @@ def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
     client.close()
 
+# Devuelve verdadero si el visitante con la 'id' pasada por parametros está dentro del parque
+def visitorInsidePark(id):
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = {id} AND dentro = 1')
+        rows = cursor.fetchall()
+        # TODO: Comprobar que funciona bien
+        if rows: 
+            conn.close()
+            return True
+        else: # rows está vacío, por tanto, el visitante[id] NO está dentro
+            conn.close()
+            return False
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
+
+# Función que cambia el valor del atributo 'dentro' de un usuario específico
+# La variable info solo puede tener como valores [1 y 0] [True False]
+def visitanteEntrandoSaliendo(id, info):
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f'UPDATE visitantes SET dentro = "{info}" where id = {id}')
+        conn.commit()
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+    conn.close()
 
 def updateMap(msg):
     return ""
@@ -81,8 +105,8 @@ def updateMap(msg):
 def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
     server.listen()
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
-    CONEX_ACTIVAS = threading.active_count()-1
-    # print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
+    CONEX_ACTIVAS = 0
+    print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
     start = time.time()
     while True:
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
@@ -90,28 +114,53 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             connectToSTE(ADDR_STE)
             start = time.time() # Reseteamos el timer
 
-        # Recibimos un movimiento
-        consumer=KafkaConsumer('engine',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
-        for message in consumer:
-            print(message)
-            # TODO: Actualizar mapa
-            map = updateMap(message)
-            producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
-            # Enviamos el mapa 
-            producer.send('visitantes',map.encode(FORMAT))
+        # Creamos el Productor
+        producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
 
-        # conn, addr = server.accept()
-        # CONEX_ACTIVAS = threading.active_count()
-        # if (CONEX_ACTIVAS <= MAX_CONEXIONES): 
-        #     thread = threading.Thread(target=handle_client, args=(conn, addr))
-        #     thread.start()
-        #     print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
-        #     print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
-        # else:
-        #     print("AFORO ALCANZADO")
-        #     conn.send("El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
-        #     conn.close()
-        #     CONEX_ACTUALES = threading.active_count()-1
+        if (CONEX_ACTIVAS <= MAX_CONEXIONES):
+            # Recibimos un mensaje
+            consumer=KafkaConsumer('engine',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+            for message in consumer:
+                print(message) # [ACCION] [ID_Visitante] ([Movimiento])
+                message = message.split(' ')
+                
+                if (message[0] == "Entrar"):
+                    print(f"El visitante[{message[1]}] quiere entrar")
+                    # Comprobar que el visitante no está dentro del parque
+                    if(visitorInsidePark(message[1]) == False):
+                        visitanteEntrandoSaliendo(message[1],1) # Hacemos que el usuario entre al parque
+                        CONEX_ACTIVAS += 1
+                        producer.send('visitantes',"Disfrute de su visita")
+                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                    else:
+                        print("No puede entrar si ya está dentro")
+                        producer.send('visitantes',"Ya estás dentro del parque.".encode(FORMAT))
+                elif(message[0] == "Salir"):
+                    print(f"El visitante[{message[1]}] quiere salir")
+                    # Comprobar que el visitante está dentro del parque
+                    if(visitorInsidePark(message[1]) == True):
+                        visitanteEntrandoSaliendo(message[1],0) # Hacemos que el usuario salga al parque
+                        CONEX_ACTIVAS -= 1
+                        producer.send('visitantes',"Esperamos que haya disfrutado de su visita, ¡venga en otra ocasión!")
+                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                    else:
+                        print("No puede salir si ya esta fuera")
+                        producer.send('visitantes',"Ya estás fuera del parque.".encode(FORMAT))
+                elif(message[0] == "Movimiento"):
+                    print(f"El visitante[{message[1]}] ha envaido un movimiento")
+                    # Comprobar que el visitante no está dentro del parque
+                    if(visitorInsidePark(message[1]) == True):
+                        print("")
+                        map = updateMap(message)
+                        # Enviamos el mapa 
+                        producer.send('visitantes',map.encode(FORMAT))
+                    else:
+                        print("No puede realizar movimientos porque no está dentro del parque")
+                        producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
+        else:
+            print("AFORO ALCANZADO")
+            # TODO: Se le envia a todos? Un topic por cada visitante
+            producer.send('visitantes',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
     
 ########## MAIN ##########
 

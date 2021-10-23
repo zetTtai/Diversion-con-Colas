@@ -14,10 +14,10 @@ def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-    visitante= (msg[1], msg[2], msg[3], "0 0") # Posicion inicial de todos los visitantes
+    visitante= (msg[1], msg[2], msg[3], "0 0", 0) # Posicion inicial de todos los visitantes y '0' para indicar que todavía no está dentro del parque
     # TODO: Comprobar si salta excepción al crear un visitante con una id existente
     try:
-        cursor.execute('INSERT INTO visitante(id, name, password, position) VALUES(?, ?, ?, ?)', visitante)
+        cursor.execute('INSERT INTO visitante(id, name, password, position) VALUES(?, ?, ?, ?, ?)', visitante)
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
