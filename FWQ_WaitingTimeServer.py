@@ -10,10 +10,6 @@ SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FILE = "DATA.txt"
 
-# Función para calcular el timepo de espera
-def calculateWaitTime(tiempo, visitantes):
-    return 0
-
 # Función que escribe en el fichero donde se guardan los datos de las atracciones
 def updateFile(msg):
     # Cada línea corresponde a una atracción y cada línea tiene el formato de: ID tiempo_ciclo nº_visitantes
@@ -50,10 +46,14 @@ def readFile():
     list_of_lines = fichero.readlines()
     fichero.close()
     res= ""
-    for line in list_of_lines:
+    for line in list_of_lines: # ID tiempo_ciclo nº_visitantes
         line.split()
+        # TODO: Como se obtiene el aforo de una atracción? Lo envia engine
+        aforo = 0
+        # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
+        tiempo_espera = (line[2]/aforo) * line[1]
         # ID-TiempoEspera ID-TiempoEspera ...
-        res += line[0] + '-' + calculateWaitTime(line[1], line[2]) + ' '
+        res += line[0] + '-' + tiempo_espera + ' '
     return res
 
 
