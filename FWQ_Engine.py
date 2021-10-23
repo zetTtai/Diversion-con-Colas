@@ -98,7 +98,7 @@ def visitanteEntrandoSaliendo(id, info):
         conn.close()
     conn.close()
 
-def updateMap(msg):
+def updateMap(id, movimiento):
     return ""
 
 # Engine empieza a escuchar al gestor de colas (Kafka)
@@ -150,8 +150,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                     print(f"El visitante[{message[1]}] ha envaido un movimiento")
                     # Comprobar que el visitante no está dentro del parque
                     if(visitorInsidePark(message[1]) == True):
-                        print("")
-                        map = updateMap(message)
+                        map = updateMap(message[1], message[2])
                         # Enviamos el mapa 
                         producer.send('visitantes',map.encode(FORMAT))
                     else:
