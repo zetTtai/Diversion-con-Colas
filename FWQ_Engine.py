@@ -29,7 +29,7 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-
+    # TODO: Cambiar a leer JSONs
     msg =  msg.split(' ')
     for info in msg:
         info = info.split('-')
@@ -132,6 +132,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             # Y Engine es CONSUMIDOR de este topic
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
+                # TODO: Cambiar a leer un JSON
                 print(message) # [ACCION] [ID_Visitante] ([Movimiento])
                 message = message.split(' ')
                 if (message[0] == "Entrar"):
