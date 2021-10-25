@@ -12,7 +12,8 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 XSEC = 30
-
+# Variable global que controla que se envie una vez las capacidades de las atracciones a STE
+ENVIADO = True
 
 # Función que se encarga de enviar el mapa actualizado al gestor de colas
 def send(msg, client):
@@ -73,8 +74,10 @@ def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     client.connect(ADDR_STE)
     print (f"Establecida conexión en [{ADDR}]")
     # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-    msg = getCapacity()
-    send(msg, client)
+    if (ENVIADO == True):
+        msg = getCapacity()
+        send(msg, client)
+        ENVIADO = False
     actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
     client.close()
 
