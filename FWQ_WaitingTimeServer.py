@@ -5,7 +5,6 @@ import random
 from kafka import KafkaConsumer
 
 HEADER = 64
-# TODO: cambiar?
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FILE = "DATA.txt"
