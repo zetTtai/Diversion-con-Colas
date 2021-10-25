@@ -46,6 +46,29 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
     conn.close() # Cerramos base de datos
 
 
+def getCapacity():
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f'SELECT capacity from atracciones')
+        capacity = cursor.fetchall()
+        cursor.execute(f'SELECT capacity from atracciones')
+        capacity = cursor.fetchall()
+        msg = ""
+        # capacidad(1) capacidad(2) ... El orden indica la id
+        for message in capacity:
+            msg += str(message[0]) + ' '
+        return msg
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return ""
+
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,6 +76,8 @@ def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     print (f"Establecida conexión en [{ADDR}]")
     # TODO: Recibir mensaje de STE y actualizar tiempos de espera de la Base de Datos
     # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
+    msg = getCapacity()
+    send(msg, client)
     actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
     client.close()
 
