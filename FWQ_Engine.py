@@ -7,9 +7,7 @@ from kafka import KafkaConsumer
 from kafka import KafkaProducer
 
 HEADER = 64
-# TODO: cambiar?
 PORT = 5050
-# TODO: cambiar?
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
@@ -74,7 +72,6 @@ def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR_STE)
     print (f"Establecida conexión en [{ADDR}]")
-    # TODO: Recibir mensaje de STE y actualizar tiempos de espera de la Base de Datos
     # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
     msg = getCapacity()
     send(msg, client)
@@ -123,7 +120,11 @@ def visitanteEntrandoSaliendo(id, info):
         conn.close()
     conn.close()
 
+# TODO: To do
 def updateMap(id, movimiento):
+    return ""
+
+def initializeMap():
     return ""
 
 # Engine empieza a escuchar al gestor de colas (Kafka)
@@ -132,6 +133,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     CONEX_ACTIVAS = 0
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
+    map = ""
     start = time.time()
     while True:
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
@@ -148,7 +150,6 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             for message in consumer:
                 print(message) # [ACCION] [ID_Visitante] ([Movimiento])
                 message = message.split(' ')
-                
                 if (message[0] == "Entrar"):
                     print(f"El visitante[{message[1]}] quiere entrar")
                     # Comprobar que el visitante no está dentro del parque
@@ -156,6 +157,12 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         visitanteEntrandoSaliendo(message[1],1) # Hacemos que el usuario entre al parque
                         CONEX_ACTIVAS += 1
                         producer.send('visitantes',"Disfrute de su visita")
+                        # TODO: Enviar mapa al visitante que acaba de entrar
+                        if(map == ""):
+                            map = initializeMap()
+                        else:
+                            map = updateMap()
+                        producer.send('visitantes',map.encode(FORMAT))
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede entrar si ya está dentro")
@@ -176,7 +183,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                     # Comprobar que el visitante no está dentro del parque
                     if(visitorInsidePark(message[1]) == True):
                         map = updateMap(message[1], message[2])
-                        # Enviamos el mapa 
+                        # Enviamos el mapa actualizado
                         producer.send('visitantes',map.encode(FORMAT))
                     else:
                         print("No puede realizar movimientos porque no está dentro del parque")
