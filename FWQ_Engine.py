@@ -14,8 +14,10 @@ ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 # Variable global que controla cada cuantos X segundos se conecta a STE
 XSEC = 10
-# Variable global que controla las posiciones de todos los visitantes monitorizados
-PosicionesVisitantes = []
+# Variable global para controlar el tamaño del mapa
+MAXSIZE = 19
+# Variable global que controla las posiciones de todos los visitantes monitorizados: Lista de tuplas [(ID, X, Y)]
+POSICIONESVISITANTES = []
 
 # Función que se encarga de enviar el mapa actualizado al gestor de colas
 def send(msg, client):
@@ -54,39 +56,37 @@ def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
     client.close()
 
-# Devuelve verdadero si el visitante con la 'id' pasada por parametros está dentro del parque
 def visitorInsidePark(id):
-    conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
-    cursor = conn.cursor()
-    try:
-        cursor.execute(f'SELECT * FROM visitantes WHERE id = {id} AND dentro = 1')
-        rows = cursor.fetchall()
-        # TODO: Comprobar que funciona bien
-        if rows: 
-            conn.close()
+    for visitante in POSICIONESVISITANTES:
+        if visitante[0] == id:
             return True
-        else: # rows está vacío, por tanto, el visitante[id] NO está dentro
-            conn.close()
-            return False
-    except sqlite3.Error as er:
-        print('SQLite error: %s' % (' '.join(er.args)))
-        print("Exception class is: ", er.__class__)
-        print('SQLite traceback: ')
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(traceback.format_exception(exc_type, exc_value, exc_tb))
-        conn.close()
-        return False
+    return False
 
-# Función que cambia el valor del atributo 'dentro' de un usuario específico
-# La variable info solo puede tener como valores [1 y 0] [True False]
-def visitanteEntrandoSaliendo(id, info):
+def validateUser(id, password):
+    return False
+
+def movement(origin, mov):
+    # mov puede ser "-1" | "0" | "1"
+    origin += int(mov)
+
+    if origin > MAXSIZE:
+        origin = 0
+    elif origin < 0:
+        origin = 19
+    return origin
+
+def updateMap(mapa, id, movX, movY):
+    mapa = json.loads(mapa)
+    coordenada = ()
+
+    # Actualizamos tiempo de espera de las atracciones
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        cursor.execute(f'UPDATE visitantes SET dentro = "{info}" where id = {id}')
-        conn.commit()
+        # cursor.execute(f'SELECT id, tiempo_espera FROM atracciones')
+        cursor.execute(f'SELECT tiempo_espera FROM atracciones')
+        rows = cursor.fetchall()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
         print("Exception class is: ", er.__class__)
@@ -95,20 +95,90 @@ def visitanteEntrandoSaliendo(id, info):
         print(traceback.format_exception(exc_type, exc_value, exc_tb))
         conn.close()
     conn.close()
-
-# TODO: To do
-def updateMap(id, movimiento):
-    return ""
+    # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos row = (tiempo,)
+    for row, atraccion in rows, mapa["atracciones"]: # row = (id, tiempo)   
+        # for atraccion in mapa["atracciones"]:
+        #     if atraccion["id"] == row[0]:
+        # atraccion["tiempo"] = row[1]
+        atraccion["tiempo"] = row[0] # TODO: Debería funcionar
+    
+    # Actualizamos la lista de posiciones
+    if id == 0 and movX == 0 and movY == 0:
+        for visitante in POSICIONESVISITANTES:
+            if visitante[0] == id:
+                visitante[1] = movement(visitante[1], movX)
+                visitante[2] = movement(visitante[2], movY)
+                coordenada = (visitante[1], visitante[2])
+        # Actualizamos JSON
+        for visitante in mapa["visitantes"]:
+            if visitante["id"] == id:
+                visitante["X"] = coordenada[0]
+                visitante["Y"] == coordenada[1]
+    else: # TODO: Caso nuevo visitante
+        atracciones = mapa["atracciones"]
+        visitantes = []
+        for visitante in POSICIONESVISITANTES:
+            data = {
+                "id": visitante[0],
+                "X" : visitante[1],
+                "Y" : visitante[2]
+            }
+            visitantes.append(data)
+        # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante que está en POSICIONESVISITANTES
+        mapa = {
+            "atracciones" : atracciones,
+            "visitantes" : visitantes
+        }
+    mapa = json.dumps(mapa)
+    return mapa
 
 def initializeMap():
-    # Formato del mensaje mapa
-    # Información de atracciones : "[ID]-[Tiemp_Espera]-[Posicion] []-[]-[] ..."
-    # Información de visitantes  : "[ID]-[Posicion] []-[] ..."
+    # Formato del mensaje mapa {
+        # atracciones : [{id, tiempo, X, Y} ...] 
+        # visitantes : [{id, X, Y} ...]
+    # }
+    atracciones = []
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f'SELECT * FROM atracciones')
+        rows = cursor.fetchall()
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return ""
+    conn.close()
+    for row in rows:
+        position = row[2].split(' ')
+        data = {
+            "id": row[0],
+            "tiempo" : row[1],
+            "X" : position[0],
+            "Y" : position[1]
+        }
+        atracciones.append(data)
 
-    
+    visitantes = []
+    for visitante in POSICIONESVISITANTES:
+        data = {
+            "id": visitante[0],
+            "X" : visitante[1],
+            "Y" : visitante[2]
+        }
+        visitantes.append(data)
 
-
-    return ""
+    mapa = {
+        "atracciones" : atracciones,
+        "visitantes" : visitantes
+    }
+    # Convertimos a JSON
+    mapa = json.dumps(mapa)
+    return mapa
 
 # Engine empieza a escuchar al gestor de colas (Kafka)
 def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
@@ -120,56 +190,62 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
     start = time.time()
     while True:
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
-        if (round((time.time() - start)) == XSEC):
+        if round((time.time() - start)) == XSEC:
             connectToSTE(ADDR_STE)
             start = time.time() # Reseteamos el timer
 
         # Creamos el Productor
         producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
 
-        if (CONEX_ACTIVAS <= MAX_CONEXIONES):
+        if CONEX_ACTIVAS <= MAX_CONEXIONES:
             # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
             # Y Engine es CONSUMIDOR de este topic
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
-                # TODO: Cambiar a leer un JSON
-                print(message) # [ACCION] [ID_Visitante] ([Movimiento])
+                print(message) # {accion: "", id: "", password: "", X:"", Y:""}
                 message = json.loads(message)
-                message = message.split(' ')
-                if (message[0] == "Entrar"):
-                    print(f"El visitante[{message[1]}] quiere entrar")
-                    # Comprobar que el visitante no está dentro del parque
-                    if(visitorInsidePark(message[1]) == False):
-                        visitanteEntrandoSaliendo(message[1],1) # Hacemos que el usuario entre al parque
-                        CONEX_ACTIVAS += 1
-                        producer.send('mapa',"Disfrute de su visita")
-                        if(map == ""):
-                            map = initializeMap()
+                if message["accion"] == "Entrar":
+                    print(f"El visitante[{message['id']}] quiere entrar")
+                    if visitorInsidePark(message["id"] == False):
+                        #Validamos que esté registrado en la base de datos
+                        if validateUser(message["id"], message["password"]) == True:
+                            # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
+                            POSICIONESVISITANTES.append((message["id"], 0, 0))
+                            CONEX_ACTIVAS += 1
+                            producer.send('mapa',"Disfrute de su visita")
+                            if map == "":
+                                map = initializeMap()
+                            else:
+                                map = updateMap(map, 0, 0, 0)
+                            # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
+                            producer.send('mapa',map.encode(FORMAT))
+                            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            map = updateMap()
-                        # TODO: Enviar mapa al visitante que acaba de entrar
-                        # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
-                        producer.send('mapa',map.encode(FORMAT))
-                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                            producer.send('mapa',"Para acceder al parque debe registrarse".encode(FORMAT))
+                            print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede entrar si ya está dentro")
                         producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
-                elif(message[0] == "Salir"):
-                    print(f"El visitante[{message[1]}] quiere salir")
+                elif message["accion"] == "Salir":
+                    print(f"El visitante[{message['id']}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
-                    if(visitorInsidePark(message[1]) == True):
-                        visitanteEntrandoSaliendo(message[1],0) # Hacemos que el usuario salga al parque
+                    if visitorInsidePark(message["id"]) == True:
+                        # Eliminamos visitante de POSICIONESVISITANTES
+                        for visitante in POSICIONESVISITANTES:
+                            if visitante[0] == message["id"]:
+                                POSICIONESVISITANTES.remove(visitante)
+                                break
                         CONEX_ACTIVAS -= 1
                         producer.send('visitantes',"Esperamos que haya disfrutado de su visita, ¡venga en otra ocasión!")
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede salir si ya esta fuera")
                         producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
-                elif(message[0] == "Movimiento"):
-                    print(f"El visitante[{message[1]}] ha envaido un movimiento")
+                elif message["accion"] == "Movimiento":
+                    print(f"El visitante[{message['id']}] ha envaido un movimiento")
                     # Comprobar que el visitante no está dentro del parque
-                    if(visitorInsidePark(message[1]) == True):
-                        map = updateMap(message[1], message[2])
+                    if visitorInsidePark(message["id"]) == True:
+                        map = updateMap(map, message["id"], message["X"], message["Y"])
                         # Enviamos el mapa actualizado
                         producer.send('mapa',map.encode(FORMAT))
                     else:
@@ -177,7 +253,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
-            # TODO: Se le envia a todos? Un topic por cada visitante
+            # TODO: Topic para los errores?
             producer.send('mapa',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
     
 ########## MAIN ##########
