@@ -10,8 +10,6 @@ SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FILE = "DATA.txt"
 
-CAPACITY = []
-
 # Función que escribe en el fichero donde se guardan los datos de las atracciones
 def updateFile(msg):
     # Cada línea corresponde a una atracción y cada línea tiene el formato de: ID tiempo_ciclo nº_visitantes
@@ -21,16 +19,16 @@ def updateFile(msg):
     fichero = open(FILE, "r")
     list_of_lines = fichero.readlines() # Obtenemos todas las lineas almacenadas en el fichero
     fichero.close()
-
     existe = False
+
     for i, line in enumerate(list_of_lines):
         if line.startswith(msg["id"]):
             existe = True
             info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
             if msg["option"] == "+":
-                visitantes = int(info[3]) + int(msg["visitantes"])# Sumamos los visitantes antiguos + los nuevos
+                visitantes = int(info[3]) + int(msg["population"])# Sumamos los visitantes antiguos + los nuevos
             else:
-                visitantes = int(info[3]) - int(msg["visitantes"])# Restamos los visitantes antiguos - los nuevos
+                visitantes = int(info[3]) - int(msg["population"])# Restamos los visitantes antiguos - los nuevos
                 if(visitantes < 0): 
                     visitantes = 0
             list_of_lines[i] = info[0] + ' ' + random.randint(10,60) + ' ' + info[2] + ' ' + visitantes + '\n'
@@ -58,7 +56,7 @@ def readFile():
         res += line[0] + '-' + tiempo_espera + ' '
         item = {
             "id": line[0],
-            "tiempo_espera" : tiempo_espera
+            "tiempo" : tiempo_espera
         }
         res.append(item)
     return res
@@ -68,12 +66,7 @@ def readFile():
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     print("Engine se ha conectado")
-    msg_length = conn.recv(HEADER).decode(FORMAT)
     # Primer mensaje para obtener la capacidad de las atracciones
-    if msg_length:
-        msg_length = int(msg_length)
-        capacidades = conn.recv(msg_length).decode(FORMAT)
-        CAPACITY = capacidades.split(' ') # Guardamos en memoria una lista con las capacidades de las atracciones del parque
         
     print("Extrayendo datos del fichero")
     msg = json.dumps(readFile()) # Lo convertimos a JSON
