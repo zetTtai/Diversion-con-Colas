@@ -40,17 +40,16 @@ def updateFile(msg):
 
 
 # Función que devuelve un string con todos los tiempos guardados en el fichero
-def readFile():
+def readFile(msg):
     fichero = open(FILE, 'r')
     list_of_lines = fichero.readlines()
     fichero.close()
     res= ""
-    for line in list_of_lines: # ID tiempo_ciclo nº_visitantes
+    aforo = msg.split(' ')
+    for i, line in list_of_lines: # ID tiempo_ciclo nº_visitantes
         line.split()
-        # TODO: Como se obtiene el aforo de una atracción? Lo envia engine
-        aforo = 0
         # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
-        tiempo_espera = (line[2]/aforo) * line[1]
+        tiempo_espera = (line[2]/aforo[i]) * line[1]
         # ID-TiempoEspera ID-TiempoEspera ...
         res += line[0] + '-' + tiempo_espera + ' '
     return res
@@ -60,12 +59,15 @@ def readFile():
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     print("Engine se ha conectado")
-    # TODO: Enviar a Engine los nuevos tiempo de espera
-    print("Extrayendo datos del fichero")
-    msg = readFile()
-    print("Enviando datos a Engine")
-    conn.send(f"{msg}".encode(FORMAT))
-        
+    msg_length = conn.recv(HEADER).decode(FORMAT)
+    # Si hay mensaje
+    if msg_length:
+        msg_length = int(msg_length)
+        capacidades = conn.recv(msg_length).decode(FORMAT)
+        print("Extrayendo datos del fichero")
+        msg = readFile(capacidades)
+        print("Enviando datos a Engine")
+        conn.send(f"{msg}".encode(FORMAT))
     # Terminamos de enviar la información a Engine sobre los tiempo de espera
     print("Fin de la conexión")
     x = input()
@@ -81,7 +83,6 @@ def start(SERVER_KAFKA, PORT_KAFKA):
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
-        # TODO:                 topic, IP, offset
         consumer=KafkaConsumer('ste',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             updateFile(message)
