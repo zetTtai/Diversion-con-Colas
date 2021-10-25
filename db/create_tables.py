@@ -6,7 +6,7 @@ cursor = conn.cursor()
 
 cursor.execute('create table visitantes(id text PRIMARY KEY, name text, password text, dentro integer)')
 
-cursor.execute('create table if not exists atracciones(id integer PRIMARY KEY, wait_time integer, capacity integer, position text)')
+cursor.execute('create table if not exists atracciones(id integer PRIMARY KEY, wait_time integer, position text)')
 
 conn.commit()
 conn.close()

@@ -11,9 +11,10 @@ PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
-XSEC = 30
-# Variable global que controla que se envie una vez las capacidades de las atracciones a STE
-ENVIADO = True
+# Variable global que controla cada cuantos X segundos se conecta a STE
+XSEC = 10
+# Variable global que controla las posiciones de todos los visitantes monitorizados
+PosicionesVisitantes = []
 
 # Función que se encarga de enviar el mapa actualizado al gestor de colas
 def send(msg, client):
@@ -44,40 +45,12 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
 
     conn.close() # Cerramos base de datos
 
-
-def getCapacity():
-    conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
-    cursor = conn.cursor()
-    try:
-        cursor.execute(f'SELECT capacity from atracciones')
-        capacity = cursor.fetchall()
-        cursor.execute(f'SELECT capacity from atracciones')
-        capacity = cursor.fetchall()
-        msg = ""
-        # capacidad(1) capacidad(2) ... El orden indica la id
-        for message in capacity:
-            msg += str(message[0]) + ' '
-        return msg
-    except sqlite3.Error as er:
-        print('SQLite error: %s' % (' '.join(er.args)))
-        print("Exception class is: ", er.__class__)
-        print('SQLite traceback: ')
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(traceback.format_exception(exc_type, exc_value, exc_tb))
-        conn.close()
-        return ""
-
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectToSTE(ADDR_STE): # (CLIENTE de STE)
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR_STE)
     print (f"Establecida conexión en [{ADDR}]")
     # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-    if (ENVIADO == True):
-        msg = getCapacity()
-        send(msg, client)
-        ENVIADO = False
     actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
     client.close()
 
@@ -128,6 +101,13 @@ def updateMap(id, movimiento):
     return ""
 
 def initializeMap():
+    # Formato del mensaje mapa
+    # Información de atracciones : "[ID]-[Tiemp_Espera]-[Posicion] []-[]-[] ..."
+    # Información de visitantes  : "[ID]-[Posicion] []-[] ..."
+
+    
+
+
     return ""
 
 # Engine empieza a escuchar al gestor de colas (Kafka)
@@ -160,8 +140,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                     if(visitorInsidePark(message[1]) == False):
                         visitanteEntrandoSaliendo(message[1],1) # Hacemos que el usuario entre al parque
                         CONEX_ACTIVAS += 1
-                        producer.send('visitantes',"Disfrute de su visita")
-                        
+                        producer.send('mapa',"Disfrute de su visita")
                         if(map == ""):
                             map = initializeMap()
                         else:
@@ -172,7 +151,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede entrar si ya está dentro")
-                        producer.send('visitantes',"Ya estás dentro del parque.".encode(FORMAT))
+                        producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
                 elif(message[0] == "Salir"):
                     print(f"El visitante[{message[1]}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
@@ -197,7 +176,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
         else:
             print("AFORO ALCANZADO")
             # TODO: Se le envia a todos? Un topic por cada visitante
-            producer.send('visitantes',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
+            producer.send('mapa',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
     
 ########## MAIN ##########
 
