@@ -31,18 +31,18 @@ def updateFile(msg):
                 visitantes = int(info[2]) - int(msg[1])# Restamos los visitantes antiguos - los nuevos
                 if(visitantes < 0): 
                     visitantes = 0
-            list_of_lines[i] = msg[0] + ' ' + random.randint(0,60) + ' ' + visitantes + '\n'
+            list_of_lines[i] = msg[0] + ' ' + random.randint(10,60) + ' ' + visitantes + '\n'
     
     fichero = open(FILE, "w")
     if(existe):
         fichero.writelines(list_of_lines)
     else:
-        fichero.write(msg[0] + ' ' + random.randint(0,60) + ' ' + msg[1] + '\n')
+        fichero.write(msg[0] + ' ' + random.randint(10,60) + ' ' + msg[1] + '\n')
     fichero.close()
 
 
 # Función que devuelve un string con todos los tiempos guardados en el fichero
-def readFile(msg):
+def readFile():
     fichero = open(FILE, 'r')
     list_of_lines = fichero.readlines()
     fichero.close()
@@ -68,7 +68,7 @@ def handle_client(conn, addr):
         CAPACITY = capacidades.split(' ') # Guardamos en memoria una lista con las capacidades de las atracciones del parque
         
     print("Extrayendo datos del fichero")
-    msg = readFile(capacidades)
+    msg = readFile()
     print("Enviando datos a Engine")
     conn.send(f"{msg}".encode(FORMAT))
     # Terminamos de enviar la información a Engine sobre los tiempo de espera
