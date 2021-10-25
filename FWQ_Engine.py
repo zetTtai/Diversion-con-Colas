@@ -63,7 +63,25 @@ def visitorInsidePark(id):
     return False
 
 def validateUser(id, password):
-    return False
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = {id} AND password = {password}')
+        rows = cursor.fetchall()
+        conn.close()
+        if rows: # No está vacío
+            return True
+        else:
+            return False
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
 
 def movement(origin, mov):
     # mov puede ser "-1" | "0" | "1"
@@ -221,7 +239,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                             producer.send('mapa',map.encode(FORMAT))
                             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            producer.send('mapa',"Para acceder al parque debe registrarse".encode(FORMAT))
+                            producer.send('mapa',"Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque".encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede entrar si ya está dentro")
