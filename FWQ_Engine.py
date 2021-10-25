@@ -2,6 +2,7 @@ import socket
 import sys
 import time
 import sqlite3
+import json
 import traceback
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
@@ -29,12 +30,11 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-    # TODO: Cambiar a leer JSONs
-    msg =  msg.split(' ')
-    for info in msg:
-        info = info.split('-')
+
+    msg = json.loads(msg)
+    for data in msg:
         try:
-            cursor.execute(f'UPDATE atracciones SET wait_time = "{info[1]}" where id = {info[0]}')
+            cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = {data["id"]}')
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -42,7 +42,7 @@ def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
             print('SQLite traceback: ')
             exc_type, exc_value, exc_tb = sys.exc_info()
             print(traceback.format_exception(exc_type, exc_value, exc_tb))
-
+            conn.close()
     conn.close() # Cerramos base de datos
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
@@ -134,6 +134,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             for message in consumer:
                 # TODO: Cambiar a leer un JSON
                 print(message) # [ACCION] [ID_Visitante] ([Movimiento])
+                message = json.loads(message)
                 message = message.split(' ')
                 if (message[0] == "Entrar"):
                     print(f"El visitante[{message[1]}] quiere entrar")
