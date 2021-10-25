@@ -148,8 +148,9 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
         producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
 
         if (CONEX_ACTIVAS <= MAX_CONEXIONES):
-            # Recibimos un mensaje
-            consumer=KafkaConsumer('engine',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+            # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
+            # Y Engine es CONSUMIDOR de este topic
+            consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
                 print(message) # [ACCION] [ID_Visitante] ([Movimiento])
                 message = message.split(' ')
@@ -160,12 +161,14 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         visitanteEntrandoSaliendo(message[1],1) # Hacemos que el usuario entre al parque
                         CONEX_ACTIVAS += 1
                         producer.send('visitantes',"Disfrute de su visita")
-                        # TODO: Enviar mapa al visitante que acaba de entrar
+                        
                         if(map == ""):
                             map = initializeMap()
                         else:
                             map = updateMap()
-                        producer.send('visitantes',map.encode(FORMAT))
+                        # TODO: Enviar mapa al visitante que acaba de entrar
+                        # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
+                        producer.send('mapa',map.encode(FORMAT))
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede entrar si ya está dentro")
@@ -180,14 +183,14 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede salir si ya esta fuera")
-                        producer.send('visitantes',"Ya estás fuera del parque.".encode(FORMAT))
+                        producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
                 elif(message[0] == "Movimiento"):
                     print(f"El visitante[{message[1]}] ha envaido un movimiento")
                     # Comprobar que el visitante no está dentro del parque
                     if(visitorInsidePark(message[1]) == True):
                         map = updateMap(message[1], message[2])
                         # Enviamos el mapa actualizado
-                        producer.send('visitantes',map.encode(FORMAT))
+                        producer.send('mapa',map.encode(FORMAT))
                     else:
                         print("No puede realizar movimientos porque no está dentro del parque")
                         producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
