@@ -9,6 +9,8 @@ SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FILE = "DATA.txt"
 
+CAPACITY = []
+
 # Función que escribe en el fichero donde se guardan los datos de las atracciones
 def updateFile(msg):
     # Cada línea corresponde a una atracción y cada línea tiene el formato de: ID tiempo_ciclo nº_visitantes
@@ -45,11 +47,10 @@ def readFile(msg):
     list_of_lines = fichero.readlines()
     fichero.close()
     res= ""
-    aforo = msg.split(' ')
     for i, line in list_of_lines: # ID tiempo_ciclo nº_visitantes
         line.split()
         # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
-        tiempo_espera = (line[2]/aforo[i]) * line[1]
+        tiempo_espera = (line[2]/CAPACITY[i]) * line[1]
         # ID-TiempoEspera ID-TiempoEspera ...
         res += line[0] + '-' + tiempo_espera + ' '
     return res
@@ -60,14 +61,16 @@ def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     print("Engine se ha conectado")
     msg_length = conn.recv(HEADER).decode(FORMAT)
-    # Si hay mensaje
+    # Primer mensaje para obtener la capacidad de las atracciones
     if msg_length:
         msg_length = int(msg_length)
         capacidades = conn.recv(msg_length).decode(FORMAT)
-        print("Extrayendo datos del fichero")
-        msg = readFile(capacidades)
-        print("Enviando datos a Engine")
-        conn.send(f"{msg}".encode(FORMAT))
+        CAPACITY = capacidades.split(' ') # Guardamos en memoria una lista con las capacidades de las atracciones del parque
+        
+    print("Extrayendo datos del fichero")
+    msg = readFile(capacidades)
+    print("Enviando datos a Engine")
+    conn.send(f"{msg}".encode(FORMAT))
     # Terminamos de enviar la información a Engine sobre los tiempo de espera
     print("Fin de la conexión")
     x = input()
