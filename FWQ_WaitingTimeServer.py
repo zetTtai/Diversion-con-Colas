@@ -25,12 +25,9 @@ def updateFile(msg):
         if line.startswith(msg["id"]):
             existe = True
             info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
-            if msg["option"] == "+":
-                visitantes = int(info[3]) + int(msg["population"])# Sumamos los visitantes antiguos + los nuevos
-            else:
-                visitantes = int(info[3]) - int(msg["population"])# Restamos los visitantes antiguos - los nuevos
-                if(visitantes < 0): 
-                    visitantes = 0
+            visitantes = int(info[3]) + int(msg["population"])# Sumamos o retamos los visitantes antiguos +/- los nuevos
+            if(visitantes < 0): 
+                visitantes = 0
             list_of_lines[i] = info[0] + ' ' + random.randint(10,60) + ' ' + info[2] + ' ' + visitantes + '\n'
     
     fichero = open(FILE, "w")
