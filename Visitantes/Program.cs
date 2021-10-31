@@ -11,12 +11,15 @@ namespace Visitantes
         /// <summary>
         /// Punto de entrada principal para la aplicación.
         /// </summary>
+        
+        public static Visitor VisitorOwn;
+
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new Visitante());
         }
     }
 }
