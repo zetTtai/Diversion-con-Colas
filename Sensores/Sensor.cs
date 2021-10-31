@@ -1,45 +1,47 @@
-﻿using System.Net;
+﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using Confluent.Kafka;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Sensores
 {
     internal class Sensor
     {
         public static string SensorId {  get; set; }
-
-        private static IPAddress Server = IPAddress.Parse("127.0.0.1");
-        private static int Port = 9092;
+        private static ProducerConfig ProducerConfig = new ProducerConfig
+        {
+            BootstrapServers = "",
+            SecurityProtocol = SecurityProtocol.SaslPlaintext,
+            SaslMechanism = SaslMechanism.ScramSha256,
+            SaslUsername = "ickafka",
+            SaslPassword = "****"
+        };
 
         public static int Population;
 
         public static bool EnviarInfo()
         {
-            try
+            using (var Producer = new ProducerBuilder<Null, string>(Sensor.ProducerConfig).Build())
             {
-                IPEndPoint ipe = new IPEndPoint(Server, Port);
-                Socket sender = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                sender.Connect(ipe);
-                Send(sender, Data());
-                sender.Shutdown(SocketShutdown.Both);
-                sender.Close();
-                return true;
-            }
-            catch (System.Exception)
-            {
-                return false;
+                try
+                {
+                    var Result = Producer.ProduceAsync("test", new Message<Null, string> { Value = Sensor.Data() }).Result;
+                    Console.WriteLine($"Delivered '{Result.Value}' to: {Result.TopicPartitionOffset}");
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return false;
+                }
             }
         }
 
-        public static void ChangeServer(string newAdress)
+        public static void InitializeKafkaServers(string IPKafka, int PortKafka)
         {
-            Server = IPAddress.Parse(newAdress);
-        }
-
-        public static void ChangePort(int newPort)
-        {
-            Port = newPort;
+            Sensor.ProducerConfig.BootstrapServers = IPKafka + ":" + PortKafka;
         }
 
         private static void Send(Socket sender, string data)
@@ -50,24 +52,11 @@ namespace Sensores
 
         private static string Data()
         {
-            return "{ \"id\" : \"" + SensorId + "\", \"population\" : " + Population + " }";
-        }
-
-        public static void ProbarConexion()
-        {
-            try
+            return JsonConvert.SerializeObject(new
             {
-                IPEndPoint ipe = new IPEndPoint(Server, Port);
-                Socket sender = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                sender.Connect(ipe);
-                sender.Shutdown(SocketShutdown.Both);
-                sender.Close();
-            }
-            catch (System.Exception e)
-            {
-                throw e;
-            }
+                sensor_id = Sensor.SensorId,
+                population = Population
+            });
         }
 
 
