@@ -158,7 +158,7 @@
             this.IPValueRegistry.Name = "IPValueRegistry";
             this.IPValueRegistry.Size = new System.Drawing.Size(195, 20);
             this.IPValueRegistry.TabIndex = 11;
-            this.IPValueRegistry.Text = "127.0.0.1";
+            this.IPValueRegistry.Text = "192.168.0.12";
             // 
             // label4
             // 
@@ -183,7 +183,7 @@
             this.PortValueRegistry.Size = new System.Drawing.Size(195, 20);
             this.PortValueRegistry.TabIndex = 13;
             this.PortValueRegistry.Value = new decimal(new int[] {
-            9092,
+            9999,
             0,
             0,
             0});
@@ -235,6 +235,7 @@
             this.VisitorName.Name = "VisitorName";
             this.VisitorName.Size = new System.Drawing.Size(195, 20);
             this.VisitorName.TabIndex = 17;
+            this.VisitorName.Text = "Joselu";
             // 
             // VisitorPassword
             // 
@@ -242,6 +243,7 @@
             this.VisitorPassword.Name = "VisitorPassword";
             this.VisitorPassword.Size = new System.Drawing.Size(195, 20);
             this.VisitorPassword.TabIndex = 18;
+            this.VisitorPassword.Text = "1234";
             // 
             // VisitorAlias
             // 
@@ -249,6 +251,7 @@
             this.VisitorAlias.Name = "VisitorAlias";
             this.VisitorAlias.Size = new System.Drawing.Size(195, 20);
             this.VisitorAlias.TabIndex = 19;
+            this.VisitorAlias.Text = "#FF0000";
             this.VisitorAlias.Enter += new System.EventHandler(this.Alias_Enter);
             // 
             // Visitante

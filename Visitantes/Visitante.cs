@@ -37,13 +37,17 @@ namespace Visitantes
 
         private void Conectar_Click(object sender, EventArgs e)
         {
-            if(Conectar.Text == "Conectar")
+            if(Conectar.Text == "Registrarse")
             {
-                Conection.InitializeRegistryServer(IPValueRegistry.Text, (int)PortValueRegistry.Value);
+                Connection.InitializeRegistryServer(IPValueRegistry.Text, (int)PortValueRegistry.Value);
+                Program.VisitorOwn = new Visitor();
                 if(Program.VisitorOwn.SignIn(VisitorAlias.Text, VisitorName.Text, VisitorPassword.Text))
                 {
-                    Conectar.Text = "Editar";
-                    Temporizador.Start();
+                    if (Program.VisitorOwn.EnterPark())
+                    {
+                        Conectar.Text = "Editar";
+                        Temporizador.Start();
+                    }
                 } 
             }
             else
@@ -67,7 +71,7 @@ namespace Visitantes
             {
                 if (Program.VisitorOwn.Exit())
                 {
-                    Conectar.Text = "Conectar";
+                    Conectar.Text = "Registrarse";
                     Temporizador.Stop();
                 }
             }

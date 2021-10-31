@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,19 +16,59 @@ namespace Visitantes
 
         public Visitor()
         {
-            Name = Faker.Internet.UserName();
-            //Alias = Faker.RandomNumber.Next(0, 999999999);
+            Name = Faker.Name.First();
+            Alias = Faker.Internet.UserName(); // TODO: Change to color
             Password = Faker.Identification.UkPassportNumber();
         }
 
-        internal bool SignIn(string text1, string text2, string text3)
+        internal bool SignIn(string alias, string name, string pass)
         {
-            throw new NotImplementedException();
+            string old_alias = Alias; 
+            string old_name = Name;
+            string old_pass = Password;
+
+            Alias = alias;
+            Name = name;
+            Password = pass;
+
+            if (Connection.RegistryCommunication(JSONData(this, "create")))
+            {
+                return true;
+            } 
+            else
+            {
+                Alias = old_alias;
+                Name = old_name;
+                Password = old_pass;
+                return false;
+            }
+        }
+
+        internal bool EnterPark()
+        {
+
         }
 
         internal bool EditInfo(string text1, string text2, string text3)
         {
             throw new NotImplementedException();
+        }
+
+        internal bool Exit()
+        {
+            throw new NotImplementedException();
+        }
+
+        private static string JSONData(Visitor v, string mode)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                mode = mode,
+                alias = v.Alias,
+                name = v.Name,
+                pass = v.Password
+            });
+
         }
     }
 }

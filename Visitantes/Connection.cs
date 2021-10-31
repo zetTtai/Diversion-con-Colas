@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Visitantes
 {
-    internal class Conection
+    internal class Connection
     {
         private static IPAddress IPRegistry;
         private static int PortRegistry;
@@ -33,23 +33,23 @@ namespace Visitantes
 
         public static void InitializeKafkaServers(string IPKafka, int PortKafka)
         {
-            Conection.ProducerConfig.BootstrapServers = IPKafka + ":" + PortKafka;
-            Conection.ConsumerConfig.BootstrapServers = IPKafka + ":" + PortKafka;
+            Connection.ProducerConfig.BootstrapServers = IPKafka + ":" + PortKafka;
+            Connection.ConsumerConfig.BootstrapServers = IPKafka + ":" + PortKafka;
         }
 
         public static void InitializeRegistryServer(string IPRegistry, int PortRegistry)
         {
-            Conection.IPRegistry = IPAddress.Parse(IPRegistry);
-            Conection.PortRegistry = PortRegistry;
+            Connection.IPRegistry = IPAddress.Parse(IPRegistry);
+            Connection.PortRegistry = PortRegistry;
         }
 
         public static bool RegistryCommunication(string Data)
         {
-            if (Conection.IPRegistry != null && Conection.IPRegistry.ToString() != "")
+            if (Connection.IPRegistry != null && Connection.IPRegistry.ToString() != "")
             {
                 try
                 {
-                    IPEndPoint ipe = new IPEndPoint(Conection.IPRegistry, Conection.PortRegistry);
+                    IPEndPoint ipe = new IPEndPoint(Connection.IPRegistry, Connection.PortRegistry);
                     Socket ConnectionSocket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     ConnectionSocket.ReceiveTimeout = 5000;
                     byte[] BufferSend = Encoding.ASCII.GetBytes(Data);
@@ -89,7 +89,7 @@ namespace Visitantes
 
         public static void Consume(string Topic = "mapa")
         {
-            using (var Consumer = new ConsumerBuilder<Null, string>(Conection.ProducerConfig).Build())
+            using (var Consumer = new ConsumerBuilder<Null, string>(Connection.ProducerConfig).Build())
             {
                 Consumer.Subscribe(Topic);
                 try
@@ -111,7 +111,7 @@ namespace Visitantes
 
         public static void Produce(string Message, string Topic = "visitantes")
         {
-            using (var Producer = new ProducerBuilder<Null, string>(Conection.ProducerConfig).Build())
+            using (var Producer = new ProducerBuilder<Null, string>(Connection.ProducerConfig).Build())
             {
                 try
                 {
@@ -124,8 +124,5 @@ namespace Visitantes
                 }
             }
         }
-
-
-
     }
 }
