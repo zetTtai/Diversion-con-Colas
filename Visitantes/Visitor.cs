@@ -46,12 +46,30 @@ namespace Visitantes
 
         internal bool EnterPark()
         {
-
+            return false;
         }
 
-        internal bool EditInfo(string text1, string text2, string text3)
+        internal bool EditInfo(string alias, string name, string pass)
         {
-            throw new NotImplementedException();
+            string old_alias = Alias;
+            string old_name = Name;
+            string old_pass = Password;
+
+            Alias = alias;
+            Name = name;
+            Password = pass;
+
+            if (Connection.RegistryCommunication(JSONData(this, "edit")))
+            {
+                return true;
+            }
+            else
+            {
+                Alias = old_alias;
+                Name = old_name;
+                Password = old_pass;
+                return false;
+            }
         }
 
         internal bool Exit()
