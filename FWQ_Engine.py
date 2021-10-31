@@ -132,7 +132,7 @@ def updateMap(mapa, id, movX, movY):
             if visitante["id"] == id:
                 visitante["X"] = coordenada[0]
                 visitante["Y"] == coordenada[1]
-    else: # TODO: Caso nuevo visitante
+    else:
         atracciones = mapa["atracciones"]
         visitantes = []
         for visitante in POSICIONESVISITANTES:
@@ -223,7 +223,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                 print(message) # {accion: "", id: "", password: "", X:"", Y:""}
                 message = json.loads(message)
                 # TODO: Cambiar accion -> action
-                if message["accion"] == "Entrar":
+                if message["action"] == "Entrar":
                     print(f"El visitante[{message['id']}] quiere entrar")
                     if visitorInsidePark(message["id"] == False):
                         #Validamos que esté registrado en la base de datos
@@ -245,7 +245,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                     else:
                         print("No puede entrar si ya está dentro")
                         producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
-                elif message["accion"] == "Salir":
+                elif message["action"] == "Salir":
                     print(f"El visitante[{message['id']}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
                     if visitorInsidePark(message["id"]) == True:
@@ -260,7 +260,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                     else:
                         print("No puede salir si ya esta fuera")
                         producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
-                elif message["accion"] == "Movimiento":
+                elif message["action"] == "Movimiento":
                     print(f"El visitante[{message['id']}] ha envaido un movimiento")
                     # Comprobar que el visitante no está dentro del parque
                     if visitorInsidePark(message["id"]) == True:

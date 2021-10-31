@@ -10,6 +10,28 @@ SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FIN = "FIN"
 
+RESPUESTA = {
+    "0": {
+        "status" : "0",
+        "message" : "OK"
+    },
+
+    "1": {
+        "status" : "1",
+        "message" : f"Opción es incorrecta [create | edit]"
+    },
+
+    "2": {
+        "status" : "2",
+        "message" : "Fallo al crear el perfil"
+    }, 
+
+    "3": {
+        "status" : "3",
+        "message" : "Fallo al editar el perfil"
+    }
+}
+
 def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
@@ -79,34 +101,20 @@ def handle_client(conn, addr):
             print("Creando perfil de visitante...")
             if(createVisitor(msg)):
                 print("¡Hecho!") 
-                respuesta = {
-                    "status" : "0",
-                    "message" : "OK"
-                }
+                respuesta = RESPUESTA["0"]
             else:
-                respuesta = {
-                    "status" : "2",
-                    "message" : "Fallo al crear el perfil"
-                }
+                respuesta = RESPUESTA["2"]
         elif msg["action"] == "edit":
                 print("Editando perfil de visitante...")
                 if(editVisitor(msg)):
                     print("¡Hecho!")
-                    respuesta = {
-                        "status" : "0",
-                        "message" : "OK"
-                    }
+                    respuesta = RESPUESTA["0"]
                 else:
-                    respuesta = {
-                        "status" : "3",
-                        "message" : "Fallo al editar el perfil"
-                    }
+                    respuesta = RESPUESTA["3"]
         else:   
             print("Opción incorrecta")
-            respuesta = {            
-                "status" : "1",
-                "message" : f"La opción {msg['action']} es incorrecta, debe ser 'create' o 'edit'"
-            }
+            respuesta = RESPUESTA["1"]
+
         respuesta = json.dumps(respuesta)
         print("Enviando respuesta...")
         conn.send(respuesta.encode(FORMAT))
