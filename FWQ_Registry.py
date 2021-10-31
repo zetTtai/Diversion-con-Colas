@@ -18,7 +18,7 @@ RESPUESTA = {
 
     "1": {
         "status" : "1",
-        "message" : f"Opción es incorrecta [create | edit]"
+        "message" : "Opción es incorrecta [create | edit]"
     },
 
     "2": {

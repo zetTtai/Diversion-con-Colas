@@ -19,6 +19,38 @@ MAXSIZE = 19
 # Variable global que controla las posiciones de todos los visitantes monitorizados: Lista de tuplas [(ID, X, Y)]
 POSICIONESVISITANTES = []
 
+RESPUESTA = {
+    "0": {
+        "status" : "0",
+        "message" : "OK"
+    },
+
+    "1": {
+        "status" : "1",
+        "message" : "Opción es incorrecta [Entrar | Salir | Movimiento]"
+    },
+
+    "2": {
+        "status" : "2",
+        "message" : "Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque."
+    }, 
+
+    "3": {
+        "status" : "3",
+        "message" : "Ya estás dentro del parque."
+    },
+
+    "4": {
+        "status" : "4",
+        "message" : "No estás fuera del parque."
+    },
+
+    "5": {
+        "status" : "5",
+        "message" : "Aforo máximo alcanzado, vuelva en otro momento"
+    }
+}
+
 # Función que se encarga de enviar el mapa actualizado al gestor de colas
 def send(msg, client):
     message = msg.encode(FORMAT)
@@ -93,9 +125,12 @@ def movement(origin, mov):
         origin = 19
     return origin
 
-def updateMap(mapa, id, movX, movY):
+def updateMap(userID, mapa, id, movX, movY):
     mapa = json.loads(mapa)
     coordenada = ()
+
+    # Actualizamos a QUIEN va enviado el mapa
+    mapa["usuario"] = userID
 
     # Actualizamos tiempo de espera de las atracciones
     conn = sqlite3.connect('db/database.db')
@@ -144,14 +179,16 @@ def updateMap(mapa, id, movX, movY):
             visitantes.append(data)
         # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante que está en POSICIONESVISITANTES
         mapa = {
+            "usuario" : userID,
             "atracciones" : atracciones,
             "visitantes" : visitantes
         }
     mapa = json.dumps(mapa)
     return mapa
 
-def initializeMap():
+def initializeMap(userID):
     # Formato del mensaje mapa {
+        # usuario : userID # Usuario al que va enviado el mapa
         # atracciones : [{id, tiempo, X, Y} ...] 
         # visitantes : [{id, X, Y} ...]
     # }
@@ -191,12 +228,25 @@ def initializeMap():
         visitantes.append(data)
 
     mapa = {
+        "usuario" : userID,
         "atracciones" : atracciones,
         "visitantes" : visitantes
     }
     # Convertimos a JSON
     mapa = json.dumps(mapa)
     return mapa
+
+def sendResponse(userID, code):
+    respuesta = json.loads(RESPUESTA[code])
+
+    respuesta = {
+        "id" : userID,
+        "status" : respuesta["status"], 
+        "message" : respuesta["message"]
+    }
+
+    respuesta = json.dumps(respuesta)
+    return respuesta;
 
 # Engine empieza a escuchar al gestor de colas (Kafka)
 def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
@@ -220,7 +270,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             # Y Engine es CONSUMIDOR de este topic
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
-                print(message) # {accion: "", id: "", password: "", X:"", Y:""}
+                print(message) # {action: "", id: "", password: "", X:"", Y:""}
                 message = json.loads(message)
                 # TODO: Cambiar accion -> action
                 if message["action"] == "Entrar":
@@ -231,20 +281,22 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                             # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
                             POSICIONESVISITANTES.append((message["id"], 0, 0))
                             CONEX_ACTIVAS += 1
-                            producer.send('mapa',"Disfrute de su visita")
+                            # producer.send('mapa',"Disfrute de su visita")
                             if map == "":
-                                map = initializeMap()
+                                map = initializeMap(message["id"])
                             else:
-                                map = updateMap(map, 0, 0, 0)
+                                map = updateMap(message["id"], map, 0, 0, 0)
                             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
                             producer.send('mapa',map.encode(FORMAT))
                             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            producer.send('mapa',"Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque".encode(FORMAT))
+                            # producer.send('mapa',"Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque".encode(FORMAT))
+                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede entrar si ya está dentro")
-                        producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
+                        # producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
+                        producer.send('mapa', sendResponse(message["id"], "3").encode(FORMAT))
                 elif message["action"] == "Salir":
                     print(f"El visitante[{message['id']}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
@@ -255,25 +307,29 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                                 POSICIONESVISITANTES.remove(visitante)
                                 break
                         CONEX_ACTIVAS -= 1
-                        producer.send('visitantes',"Esperamos que haya disfrutado de su visita, ¡venga en otra ocasión!")
+                        # producer.send('visitantes',"Esperamos que haya disfrutado de su visita, ¡venga en otra ocasión!")
+                        producer.send('mapa', sendResponse(message["id"], "0").encode(FORMAT))
                         print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                     else:
                         print("No puede salir si ya esta fuera")
-                        producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
+                        # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
+                        producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
                 elif message["action"] == "Movimiento":
-                    print(f"El visitante[{message['id']}] ha envaido un movimiento")
+                    print(f"El visitante[{message['id']}] ha enviado un movimiento")
                     # Comprobar que el visitante no está dentro del parque
                     if visitorInsidePark(message["id"]) == True:
-                        map = updateMap(map, message["id"], message["X"], message["Y"])
+                        map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
                         # Enviamos el mapa actualizado
                         producer.send('mapa',map.encode(FORMAT))
                     else:
                         print("No puede realizar movimientos porque no está dentro del parque")
-                        producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
+                        # producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
+                        producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
             # TODO: Topic para los errores?
-            producer.send('mapa',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
+            # producer.send('mapa',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
+            producer.send('mapa', sendResponse(message["id"], "5").encode(FORMAT))
     
 ########## MAIN ##########
 
