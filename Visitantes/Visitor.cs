@@ -84,7 +84,7 @@ namespace Visitantes
                 action = mode,
                 alias = v.Alias,
                 name = v.Name,
-                pass = v.Password
+                password = v.Password
             });
 
         }
