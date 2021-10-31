@@ -222,6 +222,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             for message in consumer:
                 print(message) # {accion: "", id: "", password: "", X:"", Y:""}
                 message = json.loads(message)
+                # TODO: Cambiar accion -> action
                 if message["accion"] == "Entrar":
                     print(f"El visitante[{message['id']}] quiere entrar")
                     if visitorInsidePark(message["id"] == False):

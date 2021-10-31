@@ -3,21 +3,21 @@ import threading
 import sys
 import sqlite3
 import traceback
+import json
 
 HEADER = 64
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FIN = "FIN"
-# MAX_CONEXIONES = 5
 
 def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-    visitante= (msg[1], msg[2], msg[3], 0) # Posicion inicial de todos los visitantes y '0' para indicar que todavía no está dentro del parque
+    visitante= (msg["alias"], msg["nombre"], msg["password"])
     # TODO: Comprobar si salta excepción al crear un visitante con una id existente
     try:
-        cursor.execute('INSERT INTO visitante(id, name, password, position) VALUES(?, ?, ?, ?)', visitante)
+        cursor.execute('INSERT INTO visitante(id, name, password) VALUES(?, ?, ?)', visitante)
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
@@ -36,9 +36,9 @@ def editVisitor(msg):
     cursor = conn.cursor()
     # ID no se puede cambiar
     # Los atributos que no se editan se declaran como "-" en el mensaje
-    if(msg[2] != "-"): # Actualizar nombre
+    if msg["nombre"] != "-": # Actualizar nombre
         try:
-            cursor.execute(f'UPDATE visitantes SET name = "{msg[2]}" where id = {msg[1]}')
+            cursor.execute(f'UPDATE visitantes SET name = "{msg["nombre"]}" where id = {msg["id"]}')
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -49,9 +49,9 @@ def editVisitor(msg):
             conn.close()
             return False
 
-    if(msg[3] != "-"): # Actualizar contraseña
+    if msg["password"] != "-": # Actualizar contraseña
         try:
-            cursor.execute(f'UPDATE visitantes SET password = "{msg[3]}" where id = {msg[1]}')
+            cursor.execute(f'UPDATE visitantes SET password = "{msg["password"]}" where id = {msg["id"]}')
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -68,34 +68,49 @@ def editVisitor(msg):
 
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
-    while True:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            print(f" He recibido del cliente [{addr}] el mensaje: {msg}")
-            
-            msg = msg.split(" ")
-            if(msg.len() == 4):
-                if(msg[0] == "create"): # msg= "create ID/Alias Nombre Password"
-                    print("Creando perfil de visitante...")
-                    if(createVisitor(msg)):
-                        print("¡Hecho!") 
-                        conn.send("Perfil creado correctamente".encode(FORMAT))
-                    else:
-                        conn.send("No se ha podido crear el perfil, pruebe con otro ID/Alias".encode(FORMAT))
-                elif(msg[0] == "edit"): # msg= "edit ID/Alias Nombre Password"
-                    print("Editando perfil de visitante...")
-                    if(editVisitor(msg)):
-                        print("¡Hecho!")
-                        conn.send("Perfil editado correctamente".encode(FORMAT))
-                    else:
-                        conn.send("No se ha podido editar el perfil.".encode(FORMAT))
-                else:
-                    conn.send(f"ERROR: La opción '{msg[0]}' no es válida.\nOPCIONES: [create | edit]".encode(FORMAT))
+    msg_length = conn.recv(HEADER).decode(FORMAT)
+    if msg_length:
+        msg_length = int(msg_length)
+        msg = conn.recv(msg_length).decode(FORMAT)
+        print(f" He recibido del cliente [{addr}] el mensaje: {msg}")
+        respuesta = {}
+        msg = json.loads(msg)
+        if msg["action"] == "create":
+            print("Creando perfil de visitante...")
+            if(createVisitor(msg)):
+                print("¡Hecho!") 
+                respuesta = {
+                    "status" : "0",
+                    "message" : "OK"
+                }
             else:
-                conn.send(f"ERROR: Formato del mensaje incorrecto.\n[OPCION(create/edit)] [ID/ALIAS] [NOMBRE] [PASSWORD]".encode(FORMAT))
-            break;
+                respuesta = {
+                    "status" : "2",
+                    "message" : "Fallo al crear el perfil"
+                }
+        elif msg["action"] == "edit":
+                print("Editando perfil de visitante...")
+                if(editVisitor(msg)):
+                    print("¡Hecho!")
+                    respuesta = {
+                        "status" : "0",
+                        "message" : "OK"
+                    }
+                else:
+                    respuesta = {
+                        "status" : "3",
+                        "message" : "Fallo al editar el perfil"
+                    }
+        else:   
+            print("Opción incorrecta")
+            respuesta = {            
+                "status" : "1",
+                "message" : f"La opción {msg['action']} es incorrecta, debe ser 'create' o 'edit'"
+            }
+        respuesta = json.dumps(respuesta)
+        print("Enviando respuesta...")
+        conn.send(respuesta.encode(FORMAT))
+        #     conn.send(f"ERROR: Formato del mensaje incorrecto.\n[OPCION(create/edit)] [ID/ALIAS] [NOMBRE] [PASSWORD]".encode(FORMAT))
     print("Finalizando conexión con Registry.")
     conn.close()
         
