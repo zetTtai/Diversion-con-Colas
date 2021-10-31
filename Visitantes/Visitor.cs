@@ -63,7 +63,7 @@ namespace Visitantes
         {
             return JsonConvert.SerializeObject(new
             {
-                mode = mode,
+                action = mode,
                 alias = v.Alias,
                 name = v.Name,
                 pass = v.Password
