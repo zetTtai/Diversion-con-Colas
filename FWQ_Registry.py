@@ -5,7 +5,7 @@ import sqlite3
 import traceback
 import json
 
-HEADER = 64
+HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FIN = "FIN"
@@ -36,10 +36,10 @@ def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-    visitante= (msg["alias"], msg["nombre"], msg["password"])
+    visitante= (msg["alias"], msg["name"], msg["password"])
     # TODO: Comprobar si salta excepción al crear un visitante con una id existente
     try:
-        cursor.execute('INSERT INTO visitante(id, name, password) VALUES(?, ?, ?)', visitante)
+        cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
@@ -58,9 +58,9 @@ def editVisitor(msg):
     cursor = conn.cursor()
     # ID no se puede cambiar
     # Los atributos que no se editan se declaran como "-" en el mensaje
-    if msg["nombre"] != "-": # Actualizar nombre
+    if msg["name"] != "-": # Actualizar nombre
         try:
-            cursor.execute(f'UPDATE visitantes SET name = "{msg["nombre"]}" where id = {msg["id"]}')
+            cursor.execute(f'UPDATE visitantes SET name = "{msg["name"]}" where id = {msg["alias"]}')
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -73,7 +73,7 @@ def editVisitor(msg):
 
     if msg["password"] != "-": # Actualizar contraseña
         try:
-            cursor.execute(f'UPDATE visitantes SET password = "{msg["password"]}" where id = {msg["id"]}')
+            cursor.execute(f'UPDATE visitantes SET password = "{msg["password"]}" where id = {msg["alias"]}')
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -152,4 +152,3 @@ if(len(sys.argv) == 2):
     start()
 else:
     print ("Oops!. Parece que algo falló. Necesito estos argumentos: <Puerto_Escucha>")
-
