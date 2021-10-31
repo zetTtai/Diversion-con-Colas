@@ -92,7 +92,7 @@ def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     msg_length = conn.recv(HEADER).decode(FORMAT)
     if msg_length:
-        msg_length = int(msg_length)
+        # msg_length = int(msg_length)
         msg = conn.recv(msg_length).decode(FORMAT)
         print(f" He recibido del cliente [{addr}] el mensaje: {msg}")
         respuesta = {}
