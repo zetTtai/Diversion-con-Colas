@@ -7,7 +7,7 @@ import traceback
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 
-HEADER = 64
+HEADER = 2048
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
