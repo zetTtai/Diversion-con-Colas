@@ -61,7 +61,7 @@ namespace Visitantes
                     ConnectionSocket.Shutdown(SocketShutdown.Both);
                     ConnectionSocket.Close();
 
-                    JObject json = JObject.Parse(BufferReceive.ToString());
+                    JObject json = JObject.Parse(Encoding.Default.GetString(BufferReceive));
 
                     if (json.ContainsKey("status") && json.Value<int>("status") == 0)
                     {
