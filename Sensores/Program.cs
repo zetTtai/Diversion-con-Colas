@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Sensores
@@ -11,12 +8,16 @@ namespace Sensores
         /// <summary>
         /// Punto de entrada principal para la aplicación.
         /// </summary>
+        
+        public static IP UI = null;
+
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new IP());
+            Program.UI = new IP(args);
+            Application.Run(Program.UI);
         }
     }
 }
