@@ -20,21 +20,21 @@ def updateFile(msg):
     list_of_lines = fichero.readlines() # Obtenemos todas las lineas almacenadas en el fichero
     fichero.close()
     existe = False
-
     for i, line in enumerate(list_of_lines):
-        if line.startswith(msg["id"]):
+        info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
+        if info[0] == msg["sensor_id"]:
             existe = True
-            info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
             visitantes = int(info[3]) + int(msg["population"])# Sumamos o retamos los visitantes antiguos +/- los nuevos
             if(visitantes < 0): 
                 visitantes = 0
-            list_of_lines[i] = info[0] + ' ' + random.randint(10,60) + ' ' + info[2] + ' ' + visitantes + '\n'
-    
-    fichero = open(FILE, "w")
+            list_of_lines[i] = str(info[0]) + ' ' + str(info[1]) + ' ' + str(info[2]) + ' ' + str(visitantes) + '\n'
+
     if existe:
+        fichero = open(FILE, "w")
         fichero.writelines(list_of_lines)
     else:
-        fichero.write(msg["id"] + ' ' + random.randint(10,60) + ' ' + random.randint(50, 100) + ' '+ msg["visitantes"] + '\n')
+        fichero = open(FILE, "a")
+        fichero.write(str(msg["sensor_id"]) + ' ' + str(random.randint(10,60)) + ' ' + str(random.randint(50, 100)) + ' '+ str(msg["population"]) + '\n')
     fichero.close()
 
 
@@ -81,12 +81,14 @@ def start(SERVER_KAFKA, PORT_KAFKA):
 
     # Escuchamos indefinidamente
     while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
+        # conn, addr = server.accept()
+        # thread = threading.Thread(target=handle_client, args=(conn, addr))
+        # thread.start()
+        print("??")
         consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
-            updateFile(message)
+            print("Leyendo mensaje")
+            updateFile(message.value)
     
 
 ########## MAIN ##########
