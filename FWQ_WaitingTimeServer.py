@@ -84,7 +84,7 @@ def start(SERVER_KAFKA, PORT_KAFKA):
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
-        consumer=KafkaConsumer('ste',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+        consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             updateFile(message)
     
