@@ -57,32 +57,17 @@ def editVisitor(msg):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     # ID no se puede cambiar
-    # Los atributos que no se editan se declaran como "-" en el mensaje
-    if msg["name"] != "-": # Actualizar nombre
-        try:
-            cursor.execute(f'UPDATE visitantes SET name = "{msg["name"]}" where id = {msg["alias"]}')
-            conn.commit()
-        except sqlite3.Error as er:
-            print('SQLite error: %s' % (' '.join(er.args)))
-            print("Exception class is: ", er.__class__)
-            print('SQLite traceback: ')
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            print(traceback.format_exception(exc_type, exc_value, exc_tb))
-            conn.close()
-            return False
-
-    if msg["password"] != "-": # Actualizar contraseña
-        try:
-            cursor.execute(f'UPDATE visitantes SET password = "{msg["password"]}" where id = {msg["alias"]}')
-            conn.commit()
-        except sqlite3.Error as er:
-            print('SQLite error: %s' % (' '.join(er.args)))
-            print("Exception class is: ", er.__class__)
-            print('SQLite traceback: ')
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            print(traceback.format_exception(exc_type, exc_value, exc_tb))
-            conn.close()
-            return False
+    try:
+        cursor.execute(f'UPDATE visitantes SET name = "{msg["name"]}", password = "{msg["password"]} WHERE"where id = {msg["alias"]}')
+        conn.commit()
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
 
     print(f"Cerrando conexión con la base de datos")
     conn.close()
