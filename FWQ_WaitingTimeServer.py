@@ -35,6 +35,7 @@ def updateFile(msg):
     else:
         fichero = open(FILE, "a")
         fichero.write(str(msg["sensor_id"]) + ' ' + str(random.randint(10,60)) + ' ' + str(random.randint(50, 100)) + ' '+ str(msg["population"]) + '\n')
+    print("Fichero actualizado")
     fichero.close()
 
 
@@ -84,7 +85,6 @@ def start(SERVER_KAFKA, PORT_KAFKA):
         # conn, addr = server.accept()
         # thread = threading.Thread(target=handle_client, args=(conn, addr))
         # thread.start()
-        print("??")
         consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             print("Leyendo mensaje")
