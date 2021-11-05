@@ -42,6 +42,9 @@ def createVisitor(msg):
         cursor.execute(f'SELECT * FROM visitantes WHERE id = {msg["id"]}')
         rows = cursor.fetchall()
         if rows:
+            conn.close()
+            return False
+        else:
             cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
             conn.commit()
     except sqlite3.Error as er:
