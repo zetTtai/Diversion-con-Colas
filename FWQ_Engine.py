@@ -245,7 +245,7 @@ def sendResponse(userID, code):
     respuesta = json.dumps(respuesta)
     return respuesta;
 
-def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
+def start(SERVER_KAFKA, PORT_KAFKA, ADDR_STE, MAX_CONEXIONES):
     server.listen()
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     CONEX_ACTIVAS = 0
