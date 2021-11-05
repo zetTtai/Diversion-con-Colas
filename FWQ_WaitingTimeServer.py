@@ -20,7 +20,7 @@ def updateFile(msg):
     list_of_lines = fichero.readlines() # Obtenemos todas las lineas almacenadas en el fichero
     fichero.close()
     existe = False
-    for i, line in enumerate(list_of_lines):
+    for i in enumerate(list_of_lines):
         info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
         if info[0] == msg["sensor_id"]:
             existe = True
@@ -45,19 +45,19 @@ def readFile():
     list_of_lines = fichero.readlines()
     fichero.close()
     res= []
-    for i, line in list_of_lines: # ID tiempo_ciclo capacidad nº_visitantes
+    for line in list_of_lines: # ID tiempo_ciclo capacidad nº_visitantes
         line.split()
         # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
-        # TODO: Cambiar
         tiempo_espera = (line[3]/line[2]) * line[1]
-        # ID-TiempoEspera ID-TiempoEspera ...
-        res += line[0] + '-' + tiempo_espera + ' '
         item = {
             "id": line[0],
             "tiempo" : tiempo_espera
         }
         res.append(item)
-    return res
+    msg = {
+        "datos" : res
+    }
+    return msg
 
 
 # Recibimos petición de Engine
@@ -69,10 +69,9 @@ def handle_client(conn, addr):
     print("Extrayendo datos del fichero")
     msg = json.dumps(readFile()) # Lo convertimos a JSON
     print("Enviando datos a Engine")
-    conn.send(f"{msg}".encode(FORMAT)) # TODO: Rezar
+    conn.send(f"{msg}".encode(FORMAT))
     # Terminamos de enviar la información a Engine sobre los tiempo de espera
     print("Fin de la conexión")
-    x = input()
     conn.close()
 
 def connectionSTEtoEngine():
