@@ -248,8 +248,7 @@ def sendResponse(userID, code):
     respuesta = json.dumps(respuesta)
     return respuesta;
 
-# Engine empieza a escuchar al gestor de colas (Kafka)
-def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
+def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     server.listen()
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     CONEX_ACTIVAS = 0
@@ -258,7 +257,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
     start = time.time()
     while True:
         # Cada X segundos se conecta a STE para actualizar los tiempos de espera de las atracciones
-        if round((time.time() - start)) == XSEC:
+        if round((time.time() - start)) >= XSEC:
             connectToSTE(ADDR_STE)
             start = time.time() # Reseteamos el timer
         # Creamos el Productor
@@ -270,7 +269,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
                 print("Leemos el mensaje:")
-                print(message.value) # {action: "", id: "", password: "", X:"", Y:""}
+                print(message.value) # {action: "", id: "", name: "", password: "", X:"", Y:""}
                 message = message.value
                 message = json.loads(message) # Convertimos a JSON
                 if message["action"] == "Entrar":
