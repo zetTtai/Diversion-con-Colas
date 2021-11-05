@@ -68,7 +68,7 @@ def actualizarTiemposEspera(msg):
     msg = json.loads(msg)
     for data in msg["datos"]:
         try:
-            cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = {data["id"]}')
+            cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = {data["id"]}') # TODO: Comprobar que pasa cuando la ID no existe
             conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
@@ -137,7 +137,6 @@ def updateMap(userID, mapa, id, movX, movY):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        # cursor.execute(f'SELECT id, tiempo_espera FROM atracciones')
         cursor.execute(f'SELECT tiempo_espera FROM atracciones')
         rows = cursor.fetchall()
     except sqlite3.Error as er:
@@ -148,26 +147,12 @@ def updateMap(userID, mapa, id, movX, movY):
         print(traceback.format_exception(exc_type, exc_value, exc_tb))
         conn.close()
     conn.close()
-    # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos row = (tiempo,)
-    for row, atraccion in rows, mapa["atracciones"]: # row = (id, tiempo)   
-        # for atraccion in mapa["atracciones"]:
-        #     if atraccion["id"] == row[0]:
-        # atraccion["tiempo"] = row[1]
-        atraccion["tiempo"] = row[0] # TODO: Debería funcionar
+    # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos
+    for row, atraccion in rows, mapa["atracciones"]:
+        atraccion["tiempo"] = row[0]
     
     # Actualizamos la lista de posiciones
-    if id == 0 and movX == 0 and movY == 0:
-        for visitante in POSICIONESVISITANTES:
-            if visitante[0] == id:
-                visitante[1] = movement(visitante[1], movX)
-                visitante[2] = movement(visitante[2], movY)
-                coordenada = (visitante[1], visitante[2])
-        # Actualizamos JSON
-        for visitante in mapa["visitantes"]:
-            if visitante["id"] == id:
-                visitante["X"] = coordenada[0]
-                visitante["Y"] == coordenada[1]
-    else:
+    if id == 0 and movX == 0 and movY == 0: # Nuevo visitante
         atracciones = mapa["atracciones"]
         visitantes = []
         for visitante in POSICIONESVISITANTES:
@@ -183,6 +168,18 @@ def updateMap(userID, mapa, id, movX, movY):
             "atracciones" : atracciones,
             "visitantes" : visitantes
         }
+    else:
+        for visitante in POSICIONESVISITANTES:
+            if visitante[0] == id:
+                visitante[1] = movement(visitante[1], movX)
+                visitante[2] = movement(visitante[2], movY)
+                coordenada = (visitante[1], visitante[2])
+        # Actualizamos JSON
+        for visitante in mapa["visitantes"]:
+            if visitante["id"] == id:
+                visitante["X"] = coordenada[0]
+                visitante["Y"] == coordenada[1]
+
     mapa = json.dumps(mapa)
     return mapa
 
@@ -280,7 +277,6 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                             # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
                             POSICIONESVISITANTES.append((message["id"], 0, 0))
                             CONEX_ACTIVAS += 1
-                            # producer.send('mapa',"Disfrute de su visita")
                             if map == "":
                                 map = initializeMap(message["id"])
                             else:
@@ -289,7 +285,6 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                             producer.send('mapa',map.encode(FORMAT))
                             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            # producer.send('mapa',"Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque".encode(FORMAT))
                             producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
@@ -300,15 +295,19 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                     print(f"El visitante[{message['id']}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
                     if visitorInsidePark(message["id"]) == True:
+                        #Validamos que esté registrado en la base de datos
+                        if validateUser(message["id"], message["password"]) == True:
                         # Eliminamos visitante de POSICIONESVISITANTES
-                        for visitante in POSICIONESVISITANTES:
-                            if visitante[0] == message["id"]:
-                                POSICIONESVISITANTES.remove(visitante)
-                                break
-                        CONEX_ACTIVAS -= 1
-                        # producer.send('visitantes',"Esperamos que haya disfrutado de su visita, ¡venga en otra ocasión!")
-                        producer.send('mapa', sendResponse(message["id"], "0").encode(FORMAT))
-                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                            for visitante in POSICIONESVISITANTES:
+                                if visitante[0] == message["id"]:
+                                    POSICIONESVISITANTES.remove(visitante)
+                                    break
+                            CONEX_ACTIVAS -= 1
+                            producer.send('mapa', sendResponse(message["id"], "0").encode(FORMAT))
+                            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                        else:
+                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
+                            print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede salir si ya esta fuera")
                         # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
@@ -317,13 +316,21 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                     print(f"El visitante[{message['id']}] ha enviado un movimiento")
                     # Comprobar que el visitante no está dentro del parque
                     if visitorInsidePark(message["id"]) == True:
-                        map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
-                        # Enviamos el mapa actualizado
-                        producer.send('mapa',map.encode(FORMAT))
+                        #Validamos que esté registrado en la base de datos
+                        if validateUser(message["id"], message["password"]) == True:
+                            map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
+                            # Enviamos el mapa actualizado
+                            producer.send('mapa',map.encode(FORMAT))
+                        else:
+                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
+                            print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede realizar movimientos porque no está dentro del parque")
                         # producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
                         producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
+                else:
+                    print("Action no controlada")
+                    producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
             producer.send('mapa', sendResponse(message["id"], "5").encode(FORMAT))
