@@ -272,6 +272,7 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                 print("Leemos el mensaje:")
                 print(message.value) # {action: "", id: "", password: "", X:"", Y:""}
                 message = message.value
+                message = json.loads(message) # Convertimos a JSON
                 if message["action"] == "Entrar":
                     print(f"El visitante[{message['id']}] quiere entrar")
                     if visitorInsidePark(message["id"] == False):
