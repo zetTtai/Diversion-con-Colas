@@ -60,13 +60,13 @@ def send(msg, client):
     client.send(send_length)
     client.send(message)
 
-def actualizarTiemposEspera(msg): # msg=  ID-Tiempo ID-Tiempo ...
+def actualizarTiemposEspera(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
 
     msg = json.loads(msg)
-    for data in msg:
+    for data in msg["datos"]:
         try:
             cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = {data["id"]}')
             conn.commit()
