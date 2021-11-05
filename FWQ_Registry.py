@@ -37,10 +37,13 @@ def createVisitor(msg):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     visitante= (msg["alias"], msg["name"], msg["password"])
-    # TODO: Comprobar si salta excepción al crear un visitante con una id existente
     try:
-        cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
-        conn.commit()
+        # Buscamos si ya existe ese perfil
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = {msg["id"]}')
+        rows = cursor.fetchall()
+        if rows:
+            cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
+            conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
         print("Exception class is: ", er.__class__)
@@ -58,7 +61,7 @@ def editVisitor(msg):
     cursor = conn.cursor()
     # ID no se puede cambiar
     try:
-        cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE"where id = ?', (msg["name"], msg["password"], msg["alias"]))
+        cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], msg["password"], msg["alias"]))
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
