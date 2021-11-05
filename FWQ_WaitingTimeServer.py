@@ -75,21 +75,29 @@ def handle_client(conn, addr):
     x = input()
     conn.close()
 
-
-def start(SERVER_KAFKA, PORT_KAFKA):
-    server.listen()
-    print(f"[LISTENING] Servidor a la escucha en {SERVER}")
-
-    # Escuchamos indefinidamente
+def connectionSTEtoEngine():
+    print("\n[Esperando conexión con ENGINE]")
     while True:
-        # conn, addr = server.accept()
-        # thread = threading.Thread(target=handle_client, args=(conn, addr))
-        # thread.start()
+        conn, addr = server.accept()
+        thread = threading.Thread(target=handle_client, args=(conn, addr))
+        thread.start()
+
+def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
+    while True:
         consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             print("Leyendo mensaje")
             updateFile(message.value)
-    
+
+def start(SERVER_KAFKA, PORT_KAFKA):
+    server.listen()
+    print(f"[LISTENING] Servidor a la escucha en {SERVER}")
+    # Escuchamos indefinidamente
+    threadEngine = threading.Thread(target=connectionSTEtoEngine, args=())
+    threadSensor = threading.Thread(target=connectionSTEtoSensor, args=(SERVER_KAFKA, PORT_KAFKA))
+
+    threadEngine.start()
+    threadSensor.start()
 
 ########## MAIN ##########
 
