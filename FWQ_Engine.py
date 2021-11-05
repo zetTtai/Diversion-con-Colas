@@ -283,14 +283,15 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                 map = updateMap(message["id"], map, 0, 0, 0)
                             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
                             producer.send('mapa',map.encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
                             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede entrar si ya está dentro")
                         # producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
-                        producer.send('mapa', sendResponse(message["id"], "3").encode(FORMAT))
+                        producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
                 elif message["action"] == "Salir":
                     print(f"El visitante[{message['id']}] quiere salir")
                     # Comprobar que el visitante está dentro del parque
@@ -303,15 +304,15 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                     POSICIONESVISITANTES.remove(visitante)
                                     break
                             CONEX_ACTIVAS -= 1
-                            producer.send('mapa', sendResponse(message["id"], "0").encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
                             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
                         else:
-                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede salir si ya esta fuera")
                         # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
-                        producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
+                        producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
                 elif message["action"] == "Movimiento":
                     print(f"El visitante[{message['id']}] ha enviado un movimiento")
                     # Comprobar que el visitante no está dentro del parque
@@ -321,19 +322,20 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                             map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
                             # Enviamos el mapa actualizado
                             producer.send('mapa',map.encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "0"))
                         else:
-                            producer.send('mapa', sendResponse(message["id"], "2").encode(FORMAT))
+                            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
                             print(f"El visitante[{message['id']}] NO está registrado")
                     else:
                         print("No puede realizar movimientos porque no está dentro del parque")
                         # producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
-                        producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
+                        producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
                 else:
                     print("Action no controlada")
-                    producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
+                    producer.send('visitantes', sendResponse(message["id"], "1").encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
-            producer.send('mapa', sendResponse(message["id"], "5").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
     
 ########## MAIN ##########
 
