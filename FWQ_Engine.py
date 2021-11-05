@@ -261,7 +261,6 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
         if round((time.time() - start)) == XSEC:
             connectToSTE(ADDR_STE)
             start = time.time() # Reseteamos el timer
-
         # Creamos el Productor
         producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
 
@@ -270,9 +269,9 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
             # Y Engine es CONSUMIDOR de este topic
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
-                print(message) # {action: "", id: "", password: "", X:"", Y:""}
-                message = json.loads(message)
-                # TODO: Cambiar accion -> action
+                print("Leemos el mensaje:")
+                print(message.value) # {action: "", id: "", password: "", X:"", Y:""}
+                message = message.value
                 if message["action"] == "Entrar":
                     print(f"El visitante[{message['id']}] quiere entrar")
                     if visitorInsidePark(message["id"] == False):
@@ -327,8 +326,6 @@ def start(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES): # (SERVIDOR DE KAFKA)
                         producer.send('mapa', sendResponse(message["id"], "4").encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
-            # TODO: Topic para los errores?
-            # producer.send('mapa',"El parque ha alcanzado su aforo máximo, vuelve en otro momento.".encode(FORMAT))
             producer.send('mapa', sendResponse(message["id"], "5").encode(FORMAT))
     
 ########## MAIN ##########
