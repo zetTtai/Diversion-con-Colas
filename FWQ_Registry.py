@@ -77,8 +77,6 @@ def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     msg = conn.recv(HEADER).decode(FORMAT)
     if msg:
-        # msg_length = int(msg_length)
-        # msg = conn.recv(msg_length).decode(FORMAT)
         print(f" He recibido del cliente [{addr}] el mensaje: {msg}")
         respuesta = {}
         msg = json.loads(msg)
@@ -103,7 +101,6 @@ def handle_client(conn, addr):
         respuesta = json.dumps(respuesta)
         print("Enviando respuesta...")
         conn.send(respuesta.encode(FORMAT))
-        #     conn.send(f"ERROR: Formato del mensaje incorrecto.\n[OPCION(create/edit)] [ID/ALIAS] [NOMBRE] [PASSWORD]".encode(FORMAT))
     print("Finalizando conexión con Registry.")
     conn.close()
         
@@ -113,15 +110,9 @@ def start():
     while True:
         conn, addr = server.accept()
         CONEX_ACTIVAS = threading.active_count()
-        # if (CONEX_ACTIVAS <= MAX_CONEXIONES): 
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
-        # else:
-        #     print("OOppsss... DEMASIADAS CONEXIONES. ESPERANDO A QUE ALGUIEN SE VAYA")
-        #     conn.send("OOppsss... DEMASIADAS CONEXIONES. Tendrás que esperar a que alguien se vaya".encode(FORMAT))
-        #     conn.close()
-        #     CONEX_ACTUALES = threading.active_count()-1
         
 
 ######################### MAIN ##########################
