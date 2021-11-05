@@ -58,7 +58,7 @@ def editVisitor(msg):
     cursor = conn.cursor()
     # ID no se puede cambiar
     try:
-        cursor.execute(f'UPDATE visitantes SET name = "{msg["name"]}", password = "{msg["password"]} WHERE"where id = {msg["alias"]}')
+        cursor.execute(f'UPDATE visitantes SET name = ?, password = ? WHERE"where id = ?', (msg["name"], msg["password"], msg["alias"]))
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
@@ -83,7 +83,7 @@ def handle_client(conn, addr):
         if msg["action"] == "create":
             print("Creando perfil de visitante...")
             if(createVisitor(msg)):
-                print("¡Hecho!") 
+                print("¡Hecho!")
                 respuesta = RESPUESTA["0"]
             else:
                 respuesta = RESPUESTA["2"]
