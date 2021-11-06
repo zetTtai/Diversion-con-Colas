@@ -24,7 +24,7 @@ def updateFile(msg):
         info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
         if info[0] == msg["sensor_id"]:
             existe = True
-            visitantes = int(info[3]) + int(msg["population"])# Sumamos o retamos los visitantes antiguos +/- los nuevos
+            visitantes = int(msg["population"])# Sustituimos los visitantes antiguos por los nuevos
             if(visitantes < 0): 
                 visitantes = 0
             list_of_lines[i] = str(info[0]) + ' ' + str(info[1]) + ' ' + str(info[2]) + ' ' + str(visitantes) + '\n'
