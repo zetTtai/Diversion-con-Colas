@@ -20,7 +20,7 @@ def updateFile(msg):
     list_of_lines = fichero.readlines() # Obtenemos todas las lineas almacenadas en el fichero
     fichero.close()
     existe = False
-    for i in enumerate(list_of_lines):
+    for i,line in enumerate(list_of_lines):
         info = list_of_lines[i].split(' ') # ID tiempo_ciclo capacidad nº_visitantes
         if info[0] == msg["sensor_id"]:
             existe = True
@@ -46,7 +46,7 @@ def readFile():
     fichero.close()
     res= []
     for line in list_of_lines: # ID tiempo_ciclo capacidad nº_visitantes
-        line.split()
+        line = line.split(' ')
         # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
         tiempo_espera = (int(line[3])/int(line[2])) * int(line[1])
         item = {
