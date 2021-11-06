@@ -257,7 +257,7 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                 print(message.value) # {action: "", id: "", name: "", password: "", X:"", Y:""}
                 message = message.value
                 message = json.loads(message) # Convertimos a JSON
-                if "status" not in json:
+                if ("status" in json) == False:
                     if message["action"] == "Entrar":
                         print(f"El visitante[{message['id']}] quiere entrar")
                         if visitorInsidePark(message["id"] == False):
