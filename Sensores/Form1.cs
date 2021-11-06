@@ -44,7 +44,15 @@ namespace Sensores
             {
                 AddMessageToLog("Intentando conectar al servidor " + IPValue.Text + " y al puerto " + PortValue.Value, 3);
                 Sensor.InitializeKafkaServers(IPValue.Text, (int)PortValue.Value);
-                RunStatus(false);
+                if (Sensor.CheckServerAvaliability())
+                {
+                    AddMessageToLog("Kafka disponible y preparado", 2);
+                    RunStatus(false);
+                }
+                else
+                {
+                    AddMessageToLog("No se ha podido conectar al servidor de Kafka", 0);
+                }
             }
             catch (Exception)
             {

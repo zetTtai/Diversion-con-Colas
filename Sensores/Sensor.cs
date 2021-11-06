@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Newtonsoft.Json;
 
 namespace Sensores
@@ -13,7 +15,8 @@ namespace Sensores
             SecurityProtocol = SecurityProtocol.Plaintext,
             SaslMechanism = SaslMechanism.ScramSha256,
             SaslUsername = "",
-            SaslPassword = ""
+            SaslPassword = "",
+            Acks = Acks.All
         };
 
         public static int Population;
@@ -33,6 +36,23 @@ namespace Sensores
                     Program.UI.AddMessageToLog("Se ha producido un error: " + e.Message, 0);
                     return false;
                 }
+            }
+        }
+
+        public static bool CheckServerAvaliability()
+        {
+            Program.UI.AddMessageToLog("Comprobando si Kafka esta disponible...", 1);
+            var adminConfig = new AdminClientConfig()
+            {
+                BootstrapServers = ProducerConfig.BootstrapServers
+            };
+
+            using (var adminClient = new AdminClientBuilder(adminConfig).Build())
+            {
+                var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
+                var topicsMetadata = metadata.Topics;
+                var topicNames = metadata.Topics.Select(a => a.Topic).ToList();
+                return (topicNames.Count > 0);
             }
         }
 
