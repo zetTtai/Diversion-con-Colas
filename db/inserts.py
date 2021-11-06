@@ -5,22 +5,22 @@ conn = sqlite3.connect('db/database.db')
 cursor = conn.cursor()
 
 data = [
-    ("Atraccion 1",  0, "2 3"), 
-    ("Atraccion 2",  0, "1 8"), 
-    ("Atraccion 3",  0, "6 7"), 
-    ("Atraccion 4",  0, "8 2"), 
-    ("Atraccion 5",  0, "1 17"), 
-    ("Atraccion 6",  0, "3 13"), 
-    ("Atraccion 7",  0, "5 16"), 
-    ("Atraccion 8",  0, "9 11"),
-    ("Atraccion 9",  0, "11 5"), 
-    ("Atraccion 10", 0, "14 1"), 
-    ("Atraccion 11", 0, "16 9"), 
-    ("Atraccion 12", 0, "19 4"),
-    ("Atraccion 13", 0, "10 19"), 
-    ("Atraccion 14", 0, "13 12"), 
-    ("Atraccion 15", 0, "15 18"), 
-    ("Atraccion 16", 0, "18 14")
+    ("atraccion1",  0, "2 3"), 
+    ("atraccion2",  0, "1 8"), 
+    ("atraccion3",  0, "6 7"), 
+    ("atraccion4",  0, "8 2"), 
+    ("atraccion5",  0, "1 17"), 
+    ("atraccion6",  0, "3 13"), 
+    ("atraccion7",  0, "5 16"), 
+    ("atraccion8",  0, "9 11"),
+    ("atraccion9",  0, "11 5"), 
+    ("atraccion10", 0, "14 1"), 
+    ("atraccion11", 0, "16 9"), 
+    ("atraccion12", 0, "19 4"),
+    ("atraccion13", 0, "10 19"), 
+    ("atraccion14", 0, "13 12"), 
+    ("atraccion15", 0, "15 18"), 
+    ("atraccion16", 0, "18 14")
 ]
 
 cursor.executemany("INSERT INTO atracciones VALUES(?, ?, ?)", data)

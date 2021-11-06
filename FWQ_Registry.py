@@ -39,7 +39,7 @@ def createVisitor(msg):
     visitante= (msg["id"], msg["name"], msg["password"])
     try:
         # Buscamos si ya existe ese perfil
-        cursor.execute(f'SELECT * FROM visitantes WHERE id = {msg["id"]}')
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}"')
         rows = cursor.fetchall()
         if rows:
             conn.close()

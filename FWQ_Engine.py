@@ -69,10 +69,10 @@ def actualizarTiemposEspera(msg):
     msg = json.loads(msg)
     for data in msg["datos"]:
         try:
-            cursor.execute(f"SELECT * FROM atracciones WHERE id = {data['id']}")
+            cursor.execute(f"SELECT * FROM atracciones WHERE id = '{data['id']}'")
             rows = cursor.fetchall()
             if rows: # Sólo actualizamos si la id existe en la base de datos
-                cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = {data["id"]}') # TODO: Comprobar que pasa cuando la ID no existe
+                cursor.execute(f'UPDATE atracciones SET wait_time = "{data["tiempo"]}" where id = "{data["id"]}"') # TODO: Comprobar que pasa cuando la ID no existe
                 conn.commit()
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
