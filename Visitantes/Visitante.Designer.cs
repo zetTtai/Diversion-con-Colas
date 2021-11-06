@@ -34,14 +34,14 @@
             this.label3 = new System.Windows.Forms.Label();
             this.PortValueKafka = new System.Windows.Forms.NumericUpDown();
             this.Mapa = new System.Windows.Forms.Panel();
-            this.Conectar = new System.Windows.Forms.Button();
-            this.Desconectar = new System.Windows.Forms.Button();
+            this.Registro = new System.Windows.Forms.Button();
+            this.Salir = new System.Windows.Forms.Button();
             this.Temporizador = new System.Windows.Forms.Timer(this.components);
             this.label1 = new System.Windows.Forms.Label();
             this.IPValueRegistry = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.PortValueRegistry = new System.Windows.Forms.NumericUpDown();
-            this.panel1 = new System.Windows.Forms.Panel();
+            this.Logs = new System.Windows.Forms.Panel();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -49,6 +49,8 @@
             this.VisitorName = new System.Windows.Forms.TextBox();
             this.VisitorPassword = new System.Windows.Forms.TextBox();
             this.VisitorAlias = new System.Windows.Forms.TextBox();
+            this.Entrar = new System.Windows.Forms.Button();
+            this.Editar = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueKafka)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueRegistry)).BeginInit();
             this.SuspendLayout();
@@ -58,7 +60,7 @@
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label2.Location = new System.Drawing.Point(12, 9);
+            this.label2.Location = new System.Drawing.Point(12, 331);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(199, 20);
             this.label2.TabIndex = 3;
@@ -66,7 +68,7 @@
             // 
             // IPValueKafka
             // 
-            this.IPValueKafka.Location = new System.Drawing.Point(16, 36);
+            this.IPValueKafka.Location = new System.Drawing.Point(16, 353);
             this.IPValueKafka.Name = "IPValueKafka";
             this.IPValueKafka.Size = new System.Drawing.Size(195, 20);
             this.IPValueKafka.TabIndex = 4;
@@ -77,7 +79,7 @@
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label3.Location = new System.Drawing.Point(12, 72);
+            this.label3.Location = new System.Drawing.Point(12, 384);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(138, 20);
             this.label3.TabIndex = 5;
@@ -85,7 +87,7 @@
             // 
             // PortValueKafka
             // 
-            this.PortValueKafka.Location = new System.Drawing.Point(16, 99);
+            this.PortValueKafka.Location = new System.Drawing.Point(16, 408);
             this.PortValueKafka.Maximum = new decimal(new int[] {
             65555,
             0,
@@ -103,38 +105,38 @@
             // Mapa
             // 
             this.Mapa.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
-            this.Mapa.Location = new System.Drawing.Point(239, 12);
+            this.Mapa.Location = new System.Drawing.Point(230, 12);
             this.Mapa.Name = "Mapa";
             this.Mapa.Size = new System.Drawing.Size(500, 500);
             this.Mapa.TabIndex = 7;
             // 
-            // Conectar
+            // Registro
             // 
-            this.Conectar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
-            this.Conectar.FlatAppearance.BorderSize = 0;
-            this.Conectar.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Conectar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.Conectar.Location = new System.Drawing.Point(16, 436);
-            this.Conectar.Name = "Conectar";
-            this.Conectar.Size = new System.Drawing.Size(195, 35);
-            this.Conectar.TabIndex = 8;
-            this.Conectar.Text = "Registrarse";
-            this.Conectar.UseVisualStyleBackColor = false;
-            this.Conectar.Click += new System.EventHandler(this.Conectar_Click);
+            this.Registro.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
+            this.Registro.FlatAppearance.BorderSize = 0;
+            this.Registro.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Registro.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.Registro.Location = new System.Drawing.Point(16, 280);
+            this.Registro.Name = "Registro";
+            this.Registro.Size = new System.Drawing.Size(118, 35);
+            this.Registro.TabIndex = 8;
+            this.Registro.Text = "Registrarse";
+            this.Registro.UseVisualStyleBackColor = false;
+            this.Registro.Click += new System.EventHandler(this.Registro_Click);
             // 
-            // Desconectar
+            // Salir
             // 
-            this.Desconectar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
-            this.Desconectar.FlatAppearance.BorderSize = 0;
-            this.Desconectar.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Desconectar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.Desconectar.Location = new System.Drawing.Point(16, 477);
-            this.Desconectar.Name = "Desconectar";
-            this.Desconectar.Size = new System.Drawing.Size(195, 35);
-            this.Desconectar.TabIndex = 9;
-            this.Desconectar.Text = "Salir";
-            this.Desconectar.UseVisualStyleBackColor = false;
-            this.Desconectar.Click += new System.EventHandler(this.Desconectar_Click);
+            this.Salir.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
+            this.Salir.FlatAppearance.BorderSize = 0;
+            this.Salir.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Salir.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.Salir.Location = new System.Drawing.Point(16, 476);
+            this.Salir.Name = "Salir";
+            this.Salir.Size = new System.Drawing.Size(195, 35);
+            this.Salir.TabIndex = 9;
+            this.Salir.Text = "Salir del parque";
+            this.Salir.UseVisualStyleBackColor = false;
+            this.Salir.Click += new System.EventHandler(this.Salir_Click);
             // 
             // Temporizador
             // 
@@ -146,7 +148,7 @@
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label1.Location = new System.Drawing.Point(12, 136);
+            this.label1.Location = new System.Drawing.Point(12, 12);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(122, 20);
             this.label1.TabIndex = 10;
@@ -154,7 +156,7 @@
             // 
             // IPValueRegistry
             // 
-            this.IPValueRegistry.Location = new System.Drawing.Point(16, 163);
+            this.IPValueRegistry.Location = new System.Drawing.Point(16, 35);
             this.IPValueRegistry.Name = "IPValueRegistry";
             this.IPValueRegistry.Size = new System.Drawing.Size(195, 20);
             this.IPValueRegistry.TabIndex = 11;
@@ -165,7 +167,7 @@
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label4.Location = new System.Drawing.Point(12, 197);
+            this.label4.Location = new System.Drawing.Point(12, 64);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(158, 20);
             this.label4.TabIndex = 12;
@@ -173,7 +175,7 @@
             // 
             // PortValueRegistry
             // 
-            this.PortValueRegistry.Location = new System.Drawing.Point(16, 224);
+            this.PortValueRegistry.Location = new System.Drawing.Point(16, 87);
             this.PortValueRegistry.Maximum = new decimal(new int[] {
             65555,
             0,
@@ -188,20 +190,23 @@
             0,
             0});
             // 
-            // panel1
+            // Logs
             // 
-            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
-            this.panel1.Location = new System.Drawing.Point(763, 12);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(368, 500);
-            this.panel1.TabIndex = 8;
+            this.Logs.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.Logs.AutoScroll = true;
+            this.Logs.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
+            this.Logs.Location = new System.Drawing.Point(741, 12);
+            this.Logs.Name = "Logs";
+            this.Logs.Size = new System.Drawing.Size(386, 500);
+            this.Logs.TabIndex = 8;
             // 
             // label5
             // 
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label5.Location = new System.Drawing.Point(12, 266);
+            this.label5.Location = new System.Drawing.Point(12, 117);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(48, 20);
             this.label5.TabIndex = 14;
@@ -212,7 +217,7 @@
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label6.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label6.Location = new System.Drawing.Point(12, 318);
+            this.label6.Location = new System.Drawing.Point(12, 172);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(71, 20);
             this.label6.TabIndex = 15;
@@ -223,7 +228,7 @@
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label7.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.label7.Location = new System.Drawing.Point(12, 371);
+            this.label7.Location = new System.Drawing.Point(12, 228);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(102, 20);
             this.label7.TabIndex = 16;
@@ -231,7 +236,7 @@
             // 
             // VisitorName
             // 
-            this.VisitorName.Location = new System.Drawing.Point(16, 341);
+            this.VisitorName.Location = new System.Drawing.Point(16, 196);
             this.VisitorName.Name = "VisitorName";
             this.VisitorName.Size = new System.Drawing.Size(195, 20);
             this.VisitorName.TabIndex = 17;
@@ -239,7 +244,7 @@
             // 
             // VisitorPassword
             // 
-            this.VisitorPassword.Location = new System.Drawing.Point(16, 394);
+            this.VisitorPassword.Location = new System.Drawing.Point(16, 251);
             this.VisitorPassword.Name = "VisitorPassword";
             this.VisitorPassword.Size = new System.Drawing.Size(195, 20);
             this.VisitorPassword.TabIndex = 18;
@@ -247,12 +252,40 @@
             // 
             // VisitorAlias
             // 
-            this.VisitorAlias.Location = new System.Drawing.Point(16, 289);
+            this.VisitorAlias.Location = new System.Drawing.Point(16, 141);
             this.VisitorAlias.Name = "VisitorAlias";
             this.VisitorAlias.Size = new System.Drawing.Size(195, 20);
             this.VisitorAlias.TabIndex = 19;
             this.VisitorAlias.Text = "#FF0000";
             this.VisitorAlias.Enter += new System.EventHandler(this.Alias_Enter);
+            // 
+            // Entrar
+            // 
+            this.Entrar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
+            this.Entrar.FlatAppearance.BorderSize = 0;
+            this.Entrar.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Entrar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.Entrar.Location = new System.Drawing.Point(16, 438);
+            this.Entrar.Name = "Entrar";
+            this.Entrar.Size = new System.Drawing.Size(195, 35);
+            this.Entrar.TabIndex = 20;
+            this.Entrar.Text = "Entrar al parque";
+            this.Entrar.UseVisualStyleBackColor = false;
+            this.Entrar.Click += new System.EventHandler(this.Entrar_Click);
+            // 
+            // Editar
+            // 
+            this.Editar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
+            this.Editar.FlatAppearance.BorderSize = 0;
+            this.Editar.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Editar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.Editar.Location = new System.Drawing.Point(140, 280);
+            this.Editar.Name = "Editar";
+            this.Editar.Size = new System.Drawing.Size(71, 35);
+            this.Editar.TabIndex = 21;
+            this.Editar.Text = "Editar";
+            this.Editar.UseVisualStyleBackColor = false;
+            this.Editar.Click += new System.EventHandler(this.Editar_Click);
             // 
             // Visitante
             // 
@@ -260,26 +293,28 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(26)))), ((int)(((byte)(30)))));
             this.ClientSize = new System.Drawing.Size(1139, 523);
+            this.Controls.Add(this.Editar);
+            this.Controls.Add(this.Entrar);
+            this.Controls.Add(this.PortValueKafka);
             this.Controls.Add(this.VisitorAlias);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.VisitorPassword);
+            this.Controls.Add(this.IPValueKafka);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.VisitorName);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
-            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.Logs);
             this.Controls.Add(this.PortValueRegistry);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.IPValueRegistry);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.Desconectar);
-            this.Controls.Add(this.Conectar);
+            this.Controls.Add(this.Salir);
+            this.Controls.Add(this.Registro);
             this.Controls.Add(this.Mapa);
-            this.Controls.Add(this.PortValueKafka);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.IPValueKafka);
-            this.Controls.Add(this.label2);
             this.Name = "Visitante";
-            this.Text = " ";
+            this.Text = " FWQ_Visitor";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.PortValueKafka)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueRegistry)).EndInit();
@@ -294,14 +329,14 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.NumericUpDown PortValueKafka;
         private System.Windows.Forms.Panel Mapa;
-        private System.Windows.Forms.Button Conectar;
-        private System.Windows.Forms.Button Desconectar;
+        private System.Windows.Forms.Button Registro;
+        private System.Windows.Forms.Button Salir;
         private System.Windows.Forms.Timer Temporizador;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox IPValueRegistry;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.NumericUpDown PortValueRegistry;
-        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel Logs;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label7;
@@ -309,5 +344,7 @@
         private System.Windows.Forms.TextBox VisitorName;
         private System.Windows.Forms.TextBox VisitorPassword;
         private System.Windows.Forms.TextBox VisitorAlias;
+        private System.Windows.Forms.Button Entrar;
+        private System.Windows.Forms.Button Editar;
     }
 }

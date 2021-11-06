@@ -44,11 +44,6 @@ namespace Visitantes
             }
         }
 
-        internal bool EnterPark()
-        {
-            return false;
-        }
-
         internal bool EditInfo(string alias, string name, string pass)
         {
             string old_alias = Alias;
@@ -72,9 +67,24 @@ namespace Visitantes
             }
         }
 
+
+        internal bool EnterPark()
+        {
+            if(Connection.Produce(JSONData(this, "Entrar")))
+            {
+                Connection.Consume("visitantes");
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+
         internal bool Exit()
         {
-            throw new NotImplementedException();
+            return Connection.Produce(JSONData(this, "Salir"));
         }
 
         private static string JSONData(Visitor v, string mode)
@@ -82,7 +92,7 @@ namespace Visitantes
             return JsonConvert.SerializeObject(new
             {
                 action = mode,
-                alias = v.Alias,
+                id = v.Alias,
                 name = v.Name,
                 password = v.Password
             });

@@ -15,20 +15,21 @@ namespace Visitantes
         private static ConsumerConfig ConsumerConfig = new ConsumerConfig
         {
             BootstrapServers = "",
-            SecurityProtocol = SecurityProtocol.SaslPlaintext,
+            SecurityProtocol = SecurityProtocol.Plaintext,
             SaslMechanism = SaslMechanism.ScramSha256,
-            SaslUsername = "ickafka",
-            SaslPassword = "****",
-            GroupId = "mapa"
+            SaslUsername = "",
+            SaslPassword = "",
+            GroupId = ""
         };
 
         private static ProducerConfig ProducerConfig = new ProducerConfig
         {
             BootstrapServers = "",
-            SecurityProtocol = SecurityProtocol.SaslPlaintext,
+            SecurityProtocol = SecurityProtocol.Plaintext,
             SaslMechanism = SaslMechanism.ScramSha256,
-            SaslUsername = "ickafka",
-            SaslPassword = "****"
+            SaslUsername = "",
+            SaslPassword = "",
+            Acks = Acks.Leader
         };
 
         public static void InitializeKafkaServers(string IPKafka, int PortKafka)
@@ -49,6 +50,7 @@ namespace Visitantes
             {
                 try
                 {
+                    Program.UI.AddMessageToLog("Se ha enviado la siguiente petición a Registry: " + Data, 1);
                     IPEndPoint ipe = new IPEndPoint(Connection.IPRegistry, Connection.PortRegistry);
                     Socket ConnectionSocket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     ConnectionSocket.ReceiveTimeout = 5000;
@@ -65,24 +67,25 @@ namespace Visitantes
 
                     if (json.ContainsKey("status") && json.Value<int>("status") == 0)
                     {
+                        Program.UI.AddMessageToLog("Petición satisfecha correctamente", 2);
                         return true;
                     }
                     else
                     {
-                        Console.WriteLine(json.ToString());
+                        Program.UI.AddMessageToLog("Se produjo un error creando o modificando el perfil: \n" + json.ToString(), 0);
                         return false;
                     }
                         
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.ToString());
+                    Program.UI.AddMessageToLog("Se ha producido un error comunicando con Registry: " + e.Message, 0);
                     return false;
                 }
             }
             else
             {
-                Console.WriteLine("IP for Kafka is null or not an IP");
+                Program.UI.AddMessageToLog("La IP " + Connection.IPRegistry.ToString() + "es inválida", 0);
                 return false;
             }
         }
@@ -97,30 +100,50 @@ namespace Visitantes
                     while (true)
                     {
                         var ConsumeResult = Consumer.Consume();
-                        Console.WriteLine(ConsumeResult.Message.Value);
-                        // TODO 
+                        Program.UI.AddMessageToLog(ConsumeResult.Message.Value, 2);
+                        JObject json = JObject.Parse(ConsumeResult.Message.Value);
+                        if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("id") && json["id"].ToString() == Program.VisitorOwn.Alias)
+                        {
+                            // TODO Comprobar que se ha aceptado
+                            if (json["status"].ToString() == "OK")
+                            {
+                                Program.UI.AddMessageToLog("Entrada al parque aceptada", 2);
+                                Consumer.Unsubscribe();
+                            }
+                            else
+                            {
+                                Program.UI.AddMessageToLog("El Engine no ha aceptado la petición de entrada: " + json, 0);
+                            }
+                        }
+                        else if (ConsumeResult != null && ConsumeResult.Topic == "mapa")
+                        {
+
+                        }
                     }
                 }
                 catch (Exception e)
                 {
                     Consumer.Close();
+                    Program.UI.AddMessageToLog("Se ha producido un error mientras se consumía un mensaje para el topic " + Topic, 0);
                     throw e;
                 }
             }
         }
 
-        public static void Produce(string Message, string Topic = "visitantes")
+        public static bool Produce(string Message, string Topic = "visitantes")
         {
             using (var Producer = new ProducerBuilder<Null, string>(Connection.ProducerConfig).Build())
             {
                 try
                 {
-                    var Result = Producer.ProduceAsync("test", new Message<Null, string> { Value = Message }).Result;
-                    Console.WriteLine($"Delivered '{Result.Value}' to: {Result.TopicPartitionOffset}");
+                    Producer.Produce(Topic, new Message<Null, string> { Value = Message });
+                    Program.UI.AddMessageToLog("Se ha enviado " + Message, 2);
+                    return true;
                 }
                 catch (Exception e)
                 {
-                    throw e;
+                    Program.UI.AddMessageToLog("Se ha producido un error mientras se producía un mensaje para el topic " + Topic, 0);
+                    return false;
                 }
             }
         }

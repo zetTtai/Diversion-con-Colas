@@ -13,13 +13,15 @@ namespace Visitantes
         /// </summary>
         
         public static Visitor VisitorOwn;
+        public static Visitante UI;
 
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Visitante());
+            UI = new Visitante();
+            Application.Run(UI);
         }
     }
 }
