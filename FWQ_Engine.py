@@ -332,13 +332,17 @@ def connectionEngineSTE(SERVER_STE, PORT_STE):
     start = time.time()
     while True:
         if round((time.time() - start)) >= XSEC:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect(ADDR_STE)
-            print (f"Establecida conexión en [{ADDR}] (Servidor de Tiempos de Espera)")
-            # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
-            actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
-            client.close()
-            start = time.time() # Reseteamos el timer
+            try:
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.connect(ADDR_STE)
+                print (f"Establecida conexión en [{ADDR_STE}] (Servidor de Tiempos de Espera)")
+                # print("SERVIDR: ", client.recv(2048).decode(FORMAT))
+                actualizarTiemposEspera(client.recv(2048).decode(FORMAT))
+                client.close()
+                start = time.time() # Reseteamos el timer
+            except ConnectionRefusedError as error:
+                print(f"No se ha podido conectar con STE en [{ADDR_STE}]")
+                start = time.time()
 
 def start(SERVER_KAFKA, PORT_KAFKA, SERVER_STE, PORT_STE, MAX_CONEXIONES):
     server.listen()
