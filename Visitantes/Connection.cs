@@ -19,7 +19,8 @@ namespace Visitantes
             SaslMechanism = SaslMechanism.ScramSha256,
             SaslUsername = "",
             SaslPassword = "",
-            GroupId = ""
+            GroupId = "visitantes",
+            EnableAutoCommit = false
         };
 
         private static ProducerConfig ProducerConfig = new ProducerConfig
@@ -92,7 +93,7 @@ namespace Visitantes
 
         public static void Consume(string Topic = "mapa")
         {
-            using (var Consumer = new ConsumerBuilder<Null, string>(Connection.ProducerConfig).Build())
+            using (var Consumer = new ConsumerBuilder<Null, string>(Connection.ConsumerConfig).Build())
             {
                 Consumer.Subscribe(Topic);
                 try
@@ -104,10 +105,9 @@ namespace Visitantes
                         JObject json = JObject.Parse(ConsumeResult.Message.Value);
                         if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("id") && json["id"].ToString() == Program.VisitorOwn.Alias)
                         {
-                            // TODO Comprobar que se ha aceptado
-                            if (json["status"].ToString() == "OK")
+                            if (json["status"].ToString() == "0")
                             {
-                                Program.UI.AddMessageToLog("Entrada al parque aceptada", 2);
+                                Program.UI.AddMessageToLog(json["message"].ToString(), 2);
                                 Consumer.Unsubscribe();
                             }
                             else
