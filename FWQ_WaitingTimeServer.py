@@ -87,6 +87,7 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
         for message in consumer:
             print("Leyendo mensaje")
             updateFile(message.value)
+            consumer.commit()
 
 def start(SERVER_KAFKA, PORT_KAFKA):
     server.listen()
