@@ -85,6 +85,7 @@ def actualizarTiemposEspera(msg):
 
 def visitorInsidePark(id):
     for visitante in POSICIONESVISITANTES:
+        print(visitante)
         if visitante[0] == id:
             return True
     return False
@@ -257,10 +258,10 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                 print(message.value) # {action: "", id: "", name: "", password: "", X:"", Y:""}
                 message = message.value
                 message = json.loads(message) # Convertimos a JSON
-                if ("status" in json) == False:
+                if ("status" in message) == False:
                     if message["action"] == "Entrar":
                         print(f"El visitante[{message['id']}] quiere entrar")
-                        if visitorInsidePark(message["id"] == False):
+                        if not visitorInsidePark(message["id"]):
                             #Validamos que esté registrado en la base de datos
                             if validateUser(message["id"], message["password"]) == True:
                                 # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
