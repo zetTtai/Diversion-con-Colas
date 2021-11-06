@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -88,6 +89,23 @@ namespace Visitantes
             {
                 Program.UI.AddMessageToLog("La IP " + Connection.IPRegistry.ToString() + "es inválida", 0);
                 return false;
+            }
+        }
+
+        public static bool CheckServerAvaliability()
+        {
+            Program.UI.AddMessageToLog("Comprobando si Kafka esta disponible...", 1);
+            var adminConfig = new AdminClientConfig()
+            {
+                BootstrapServers = ProducerConfig.BootstrapServers
+            };
+
+            using (var adminClient = new AdminClientBuilder(adminConfig).Build())
+            {
+                var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
+                var topicsMetadata = metadata.Topics;
+                var topicNames = metadata.Topics.Select(a => a.Topic).ToList();
+                return (topicNames.Count > 0);
             }
         }
 

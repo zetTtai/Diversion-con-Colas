@@ -54,7 +54,7 @@ namespace Visitantes
 
         private void Entrar_Click(object sender, EventArgs e)
         {
-            if(Program.VisitorOwn is null)
+            if (Program.VisitorOwn is null)
             {
                 Program.VisitorOwn = new Visitor()
                 {
@@ -64,7 +64,17 @@ namespace Visitantes
                 };
             }
 
+            AddMessageToLog("Verificando la conexión con Kafka", 1);
             Connection.InitializeKafkaServers(IPValueKafka.Text, (int)PortValueKafka.Value);
+            if (Connection.CheckServerAvaliability())
+            {
+                AddMessageToLog("Se ha podido conectar con Kafka", 2);
+            }
+            else
+            {
+                AddMessageToLog("No se ha podido conectar con Kafka", 0);
+                return;
+            }
 
             AddMessageToLog("Intentando entrar al parque...", 1);
             if (Program.VisitorOwn.EnterPark())
