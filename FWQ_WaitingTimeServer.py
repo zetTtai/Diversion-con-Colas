@@ -48,7 +48,7 @@ def readFile():
     for line in list_of_lines: # ID tiempo_ciclo capacidad nº_visitantes
         line.split()
         # T= número de personas que hay en cola (recibidas del sensor) /número de personas que caben en cada ciclo) * tiempo de cada ciclo.
-        tiempo_espera = (line[3]/line[2]) * line[1]
+        tiempo_espera = (int(line[3])/int(line[2])) * int(line[1])
         item = {
             "id": line[0],
             "tiempo" : tiempo_espera
