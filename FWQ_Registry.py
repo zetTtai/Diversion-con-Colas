@@ -36,7 +36,7 @@ def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
-    visitante= (msg["alias"], msg["name"], msg["password"])
+    visitante= (msg["id"], msg["name"], msg["password"])
     try:
         # Buscamos si ya existe ese perfil
         cursor.execute(f'SELECT * FROM visitantes WHERE id = {msg["id"]}')
@@ -64,7 +64,7 @@ def editVisitor(msg):
     cursor = conn.cursor()
     # ID no se puede cambiar
     try:
-        cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], msg["password"], msg["alias"]))
+        cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], msg["password"], msg["id"]))
         conn.commit()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
