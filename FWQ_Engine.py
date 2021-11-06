@@ -95,7 +95,7 @@ def validateUser(id, password):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        cursor.execute(f'SELECT * FROM visitantes WHERE id = {id} AND password = {password}')
+        cursor.execute('SELECT * FROM visitantes WHERE id = ? AND password = ?', (id, password))
         rows = cursor.fetchall()
         conn.close()
         if rows: # No está vacío
