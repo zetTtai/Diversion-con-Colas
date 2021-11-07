@@ -314,7 +314,7 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                 map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
                                 # Enviamos el mapa actualizado
                                 producer.send('mapa',map.encode(FORMAT))
-                                producer.send('visitantes', sendResponse(message["id"], "0"))
+                                producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
                             else:
                                 producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
                                 print(f"El visitante[{message['id']}] NO está registrado")
