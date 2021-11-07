@@ -168,10 +168,10 @@ def updateMap(userID, mapa, id, movX, movY):
     else:
         for visitante in POSICIONESVISITANTES:
             if visitante[0] == id:
-                visitante = (visitante[0], movement(visitante[1], movX), movement(visitante[2], movY)) 
-                # visitante[1] = movement(visitante[1], movX)
-                # visitante[2] = movement(visitante[2], movY)
-                coordenada = (visitante[1], visitante[2])
+                newX =  movement(visitante[1], movX)
+                newY = movement(visitante[2], movY)
+                visitante = (visitante[0], newX, newY) 
+                coordenada = (newX, newY)
         # Actualizamos JSON
         for visitante in mapa["visitantes"]:
             if visitante["id"] == id:
