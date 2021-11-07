@@ -204,14 +204,15 @@ def initializeMap(userID):
         return ""
     conn.close()
     for row in rows:
-        position = row[2].split(' ')
-        data = {
-            "id": row[0],
-            "tiempo" : row[1],
-            "X" : position[0],
-            "Y" : position[1]
-        }
-        atracciones.append(data)
+        if not row[1] == 0:
+            position = row[2].split(' ')
+            data = {
+                "id": row[0],
+                "tiempo" : row[1],
+                "X" : position[0],
+                "Y" : position[1]
+            }
+            atracciones.append(data)
 
     visitantes = []
     for visitante in POSICIONESVISITANTES:
