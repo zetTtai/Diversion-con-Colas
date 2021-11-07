@@ -133,7 +133,7 @@ def updateMap(userID, mapa, id, movX, movY):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        cursor.execute(f'SELECT tiempo_espera FROM atracciones')
+        cursor.execute(f'SELECT wait_time FROM atracciones')
         rows = cursor.fetchall()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
