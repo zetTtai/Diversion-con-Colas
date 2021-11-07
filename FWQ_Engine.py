@@ -257,7 +257,6 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
             # Y Engine es CONSUMIDOR de este topic
             consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
             for message in consumer:
-                print(message.value) # {action: "", id: "", name: "", password: "", X:"", Y:""}
                 message = json.loads(message.value) # Convertimos a JSON
                 if "timestamp" in message:
                     if  message["timestamp"] - start > 0.0:
