@@ -133,7 +133,7 @@ def updateMap(userID, mapa, id, movX, movY):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        cursor.execute(f'SELECT id, wait_time FROM atracciones')
+        cursor.execute(f'SELECT wait_time FROM atracciones')
         rows = cursor.fetchall()
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
@@ -282,7 +282,6 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                 print(f"El visitante[{message['id']}] NO está registrado")
                         else:
                             print("No puede entrar si ya está dentro")
-                            # producer.send('mapa',"Ya estás dentro del parque.".encode(FORMAT))
                             producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
                     elif message["action"] == "Salir":
                         print(f"El visitante[{message['id']}] quiere salir")
@@ -320,7 +319,6 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                 print(f"El visitante[{message['id']}] NO está registrado")
                         else:
                             print("No puede realizar movimientos porque no está dentro del parque")
-                            # producer.send('visitantes',"No estás dentro del parque.".encode(FORMAT))
                             producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
                     else:
                         print("Action no controlada")
