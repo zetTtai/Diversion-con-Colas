@@ -67,7 +67,8 @@ namespace Sensores
             return JsonConvert.SerializeObject(new
             {
                 sensor_id = Sensor.SensorId,
-                population = Population
+                population = Population,
+                timestamp = Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow)
             });
         }
 
