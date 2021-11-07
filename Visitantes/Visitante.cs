@@ -2,6 +2,7 @@
 using System;
 using System.Drawing;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -102,6 +103,7 @@ namespace Visitantes
                     Alias = VisitorAlias.Text,
                     Name = VisitorName.Text,
                     Password = VisitorPassword.Text,
+                    Coords = new Tuple<int, int>(0,0)
                 };
             }
 
@@ -169,14 +171,14 @@ namespace Visitantes
             else if(json.ContainsKey("atracciones"))
             {
                 Temporizador.Enabled = true;
-                Program.UI.Invoke(AddMessageFunction, "Mapa: " + json, 2);
+                // Program.UI.Invoke(AddMessageFunction, "Mapa: " + json, 2);
                 Program.Attractions.Clear();
                 foreach (var item in json["atracciones"])
                 {
                     Program.Attractions.Add(new Attraction
                     {
                         Id = item["id"].ToString(),
-                        TiempoEspera = int.Parse(item["tiempo"].ToString()),
+                        TiempoEspera = double.Parse(item["tiempo"].ToString()),
                         Coords = new Tuple<int, int>(int.Parse(item["X"].ToString()), int.Parse(item["Y"].ToString()))
                     });
                 }
@@ -227,7 +229,6 @@ namespace Visitantes
         private void Temporizador_Tick(object sender, EventArgs e)
         {
             Tuple<int,int> movimiento = Program.VisitorOwn.DecideMovement(Program.Attractions);
-            AddMessageToLog("Intentando moverse en la dirección: " + movimiento.ToString(), 1);
             if (!Program.VisitorOwn.Move(movimiento))
             {
                 AddMessageToLog("Se ha producido un error comunicando el movimiento", 0);

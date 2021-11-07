@@ -20,7 +20,7 @@ namespace Visitantes
             SaslMechanism = SaslMechanism.ScramSha256,
             SaslUsername = "",
             SaslPassword = "",
-            GroupId = "visitantes",
+            GroupId = Guid.NewGuid().ToString(),
         };
 
         private static ProducerConfig ProducerConfig = new ProducerConfig
@@ -125,7 +125,7 @@ namespace Visitantes
                             {
                                 if (ConsumeResult.Message.Timestamp.UnixTimestampMs >= Program.TimeStamp)
                                 {
-                                    Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
+                                    //Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
                                     Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
                                 }
                             }
@@ -133,7 +133,7 @@ namespace Visitantes
                             {
                                 if (ConsumeResult.Message.Timestamp.UnixTimestampMs >= Program.TimeStamp)
                                 {
-                                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Mapa:" + json.ToString(), 1);
+                                    //Program.UI.Invoke(Program.UI.AddMessageFunction, "Mapa:" + json.ToString(), 1);
                                     Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
                                 }
                             }
@@ -161,7 +161,7 @@ namespace Visitantes
                 try
                 {
                     Producer.ProduceAsync(Topic, new Message<Null, string> { Value = Message }).Wait();
-                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha enviado " + Message, 2);
+                    //Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha enviado " + Message, 2);
                     return true;
                 }
                 catch (Exception e)

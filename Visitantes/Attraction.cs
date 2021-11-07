@@ -9,7 +9,7 @@ namespace Visitantes
     internal class Attraction : IComparable<Attraction>
     {
         public string Id;
-        public int TiempoEspera;
+        public double TiempoEspera;
         public Tuple<int, int> Coords;
 
         public int CompareTo(Attraction other)

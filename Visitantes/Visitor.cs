@@ -1,10 +1,7 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Confluent.Kafka;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Visitantes
@@ -109,7 +106,8 @@ namespace Visitantes
                 action = mode,
                 id = v.Alias,
                 name = v.Name,
-                password = v.Password
+                password = v.Password,
+                timestamp = Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow)
             });
 
         }
@@ -123,7 +121,8 @@ namespace Visitantes
                 Y = coords.Item2,
                 id = v.Alias,
                 name = v.Name,
-                password = v.Password
+                password = v.Password,
+                timestamp = Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow)
             });
         }
 
@@ -137,15 +136,16 @@ namespace Visitantes
             attractions.Sort();
 
             int dx = 0, dy = 0;
-            for(int i = 0; dx == dy && dx == 0; i++)
+            Attraction objective = new Attraction();
+            for (int i = 0; dx == dy && dx == 0; i++)
             {
-                Attraction objective = attractions[i];
+                objective = attractions[i];
                 dx = objective.Coords.Item1 - Program.VisitorOwn.Coords.Item1;
                 dy = objective.Coords.Item2 - Program.VisitorOwn.Coords.Item2;
             }
 
             int cx = 0, cy = 0;
-            if (dx < 0 && Math.Abs(dy) < (Map.MAP_SIZE - Math.Abs(dy)))
+            if (dx < 0 && Math.Abs(dx) < (Map.MAP_SIZE - Math.Abs(dx)))
             {
                 cx = -1;
             }
@@ -160,9 +160,10 @@ namespace Visitantes
             }
             else if(dy < 0)
             {
-                cx = -1;
+                cy = -1;
             }
-            
+
+            Program.UI.Invoke(Program.UI.AddMessageFunction, "Intentando moverse en (X,Y): (" + cx + "," + cy + "), hacia: " + objective.Coords.ToString(), 1);
             return new Tuple<int, int>(cx, cy);
 
         }

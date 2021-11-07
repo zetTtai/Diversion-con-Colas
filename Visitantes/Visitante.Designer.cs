@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Visitante));
             this.label2 = new System.Windows.Forms.Label();
             this.IPValueKafka = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -314,6 +315,7 @@
             this.Controls.Add(this.Salir);
             this.Controls.Add(this.Registro);
             this.Controls.Add(this.Mapa);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Visitante";
             this.Text = " FWQ_Visitor";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Visitante_FormClosing);
