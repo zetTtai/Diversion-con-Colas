@@ -325,8 +325,9 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                                 print("Action no controlada")
                                 producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
                     else:
-                        print("AFORO ALCANZADO")
-                        producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
+                        if visitorInsidePark(message["id"]) == False:
+                            print("AFORO ALCANZADO")
+                            producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectionEngineSTE(SERVER_STE, PORT_STE):
