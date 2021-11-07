@@ -252,11 +252,11 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
     while True:
-        if CONEX_ACTIVAS <= MAX_CONEXIONES:
-            # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
-            # Y Engine es CONSUMIDOR de este topic
-            consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
-            for message in consumer:
+        # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
+        # Y Engine es CONSUMIDOR de este topic
+        consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+        for message in consumer:
+            if MAX_CONEXIONES-CONEX_ACTIVAS >= 0:
                 message = json.loads(message.value) # Convertimos a JSON
                 if "timestamp" in message:
                     if  message["timestamp"] - start > 0.0:
@@ -324,9 +324,9 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                             else:
                                 print("Action no controlada")
                                 producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
-        else:
-            print("AFORO ALCANZADO")
-            producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
+            else:
+                print("AFORO ALCANZADO")
+                producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectionEngineSTE(SERVER_STE, PORT_STE):
