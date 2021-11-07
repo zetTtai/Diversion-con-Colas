@@ -101,8 +101,7 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
             message = json.loads(message.value)
             if "timestamp" in message:
                 if message["timestamp"] > start: # Solo leemos los mensajes después del arranque de STE
-                # if (message["timestamp"] - start) > 0.0:
-                    print((message["timestamp"] - start))
+                # if not isclose(message["timestamp"], start, rel_tol=1e-1):
                     print("Leyendo mensaje")
                     updateFile(message)
 
