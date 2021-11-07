@@ -198,7 +198,7 @@
             this.Logs.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
             this.Logs.Location = new System.Drawing.Point(741, 12);
             this.Logs.Name = "Logs";
-            this.Logs.Size = new System.Drawing.Size(386, 500);
+            this.Logs.Size = new System.Drawing.Size(632, 500);
             this.Logs.TabIndex = 8;
             // 
             // label5
@@ -292,7 +292,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(26)))), ((int)(((byte)(30)))));
-            this.ClientSize = new System.Drawing.Size(1139, 523);
+            this.ClientSize = new System.Drawing.Size(1385, 523);
             this.Controls.Add(this.Editar);
             this.Controls.Add(this.Entrar);
             this.Controls.Add(this.PortValueKafka);
@@ -315,6 +315,7 @@
             this.Controls.Add(this.Mapa);
             this.Name = "Visitante";
             this.Text = " FWQ_Visitor";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Visitante_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.PortValueKafka)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueRegistry)).EndInit();

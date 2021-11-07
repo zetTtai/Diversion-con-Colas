@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -6,6 +7,12 @@ namespace Visitantes
 {
     public partial class Visitante : Form
     {
+        public delegate void AddMessage(string message, int mode);
+        public delegate void EngineMessage(JObject json);
+        public AddMessage AddMessageFunction;
+        public EngineMessage EngineResponseFunction;
+        private bool _wannaExit = false;
+        private bool _wannaEnter = false;
 
         public Visitante()
         {
@@ -14,6 +21,8 @@ namespace Visitantes
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            AddMessageFunction = new AddMessage(AddMessageToLog);
+            EngineResponseFunction = new EngineMessage(EngineResponse);
             int PanelSize = Mapa.Width / Map.MAP_SIZE;
 
             for (int i = 0; i < Map.MAP_SIZE; i++)
@@ -51,39 +60,6 @@ namespace Visitantes
             } 
 
         }
-
-        private void Entrar_Click(object sender, EventArgs e)
-        {
-            if (Program.VisitorOwn is null)
-            {
-                Program.VisitorOwn = new Visitor()
-                {
-                    Alias = VisitorAlias.Text,
-                    Name = VisitorName.Text,
-                    Password = VisitorPassword.Text,
-                };
-            }
-
-            AddMessageToLog("Verificando la conexión con Kafka", 1);
-            Connection.InitializeKafkaServers(IPValueKafka.Text, (int)PortValueKafka.Value);
-            if (Connection.CheckServerAvaliability())
-            {
-                AddMessageToLog("Se ha podido conectar con Kafka", 2);
-            }
-            else
-            {
-                AddMessageToLog("No se ha podido conectar con Kafka", 0);
-                return;
-            }
-
-            AddMessageToLog("Intentando entrar al parque...", 1);
-            if (Program.VisitorOwn.EnterPark())
-            {
-                VisitorStatus(false);
-                ParkStatus(true);
-            }
-        }
-
         private void Editar_Click(object sender, EventArgs e)
         {
             if (Program.VisitorOwn.EditInfo(VisitorAlias.Text, VisitorName.Text, VisitorPassword.Text))
@@ -98,8 +74,40 @@ namespace Visitantes
             }
         }
 
+        private void Entrar_Click(object sender, EventArgs e)
+        {
+            _wannaEnter = true;
+            if (Program.VisitorOwn is null)
+            {
+                Program.VisitorOwn = new Visitor()
+                {
+                    Alias = VisitorAlias.Text,
+                    Name = VisitorName.Text,
+                    Password = VisitorPassword.Text,
+                };
+            }
+
+            Connection.InitializeKafkaServers(IPValueKafka.Text, (int)PortValueKafka.Value);
+            if (Connection.CheckServerAvaliability())
+            {
+                AddMessageToLog("Se ha podido conectar con Kafka", 2);
+            }
+            else
+            {
+                AddMessageToLog("No se ha podido conectar con Kafka", 0);
+                return;
+            }
+
+            AddMessageToLog("Intentando entrar al parque...", 1);
+            if (Program.VisitorOwn.TryEnterPark())
+            {
+                VisitorStatus(false);
+            }
+        }
+
         private void Salir_Click(object sender, EventArgs e)
         {
+            _wannaExit = true;
             AddMessageToLog("Intentando salir del parque...", 1);
             if(Program.VisitorOwn.Exit())
             {
@@ -108,22 +116,65 @@ namespace Visitantes
             }
         }
 
+        private void EngineResponse(JObject json)
+        {
+            if (_wannaEnter && json.ContainsKey("status"))
+            {
+                if(json["status"].ToString() == "0")
+                {
+                    Program.UI.Invoke(AddMessageFunction, "Se ha entrado al parque correctamente", 2);
+                    _wannaEnter = false;
+                    ParkStatus(false);
+                }
+                else
+                {
+                    Program.UI.Invoke(AddMessageFunction, "Se ha rechazado la petición de entrada: " + json, 0);
+                    ParkStatus(true);
+                }   
+            }
+            else if (_wannaExit && json.ContainsKey("status"))
+            {
+                if (json["status"].ToString() == "0")
+                {
+                    Program.UI.Invoke(AddMessageFunction, "Se ha salido del parque correctamente", 2);
+                    _wannaEnter = false;
+                    ParkStatus(true);
+                }
+                else
+                {
+                    Program.UI.Invoke(AddMessageFunction, "Se ha rechazado la petición de salida: " + json, 0);
+                    ParkStatus(false);
+                }
+            }
+            else
+            {
+                
+            }
+        }
+
         private void Temporizador_Tick(object sender, EventArgs e)
         {
+            Tuple<int,int> movimiento = Program.VisitorOwn.DecideMovement(Program.Attractions);
+            AddMessageToLog("Intentando moverse en la dirección: " + movimiento.ToString(), 1);
+            if (!Program.VisitorOwn.Move(movimiento))
+            {
+                AddMessageToLog("Se ha producido un error comunicando el movimiento", 0);
+            }
 
         }
 
+
+        /*
+         * AUXILIAR METHODS
+         */
         private void Alias_Enter(object sender, EventArgs e)
         {
-            if(ColorPicker.ShowDialog() == DialogResult.OK)
+            if (ColorPicker.ShowDialog() == DialogResult.OK)
             {
                 VisitorAlias.Text = HexConverter(ColorPicker.Color);
             }
         }
 
-        /*
-         * AUXILIAR METHODS
-         */
         public void AddMessageToLog(string message, int type)
         {
             Label aux = new Label
@@ -179,5 +230,9 @@ namespace Visitantes
             return "#" + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2");
         }
 
+        private void Visitante_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Salir_Click(sender, e);
+        }
     }
 }

@@ -52,7 +52,7 @@ namespace Visitantes
             {
                 try
                 {
-                    Program.UI.AddMessageToLog("Se ha enviado la siguiente petición a Registry: " + Data, 1);
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha enviado la siguiente petición a Registry: " + Data, 1);
                     IPEndPoint ipe = new IPEndPoint(Connection.IPRegistry, Connection.PortRegistry);
                     Socket ConnectionSocket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     ConnectionSocket.ReceiveTimeout = 5000;
@@ -69,32 +69,32 @@ namespace Visitantes
 
                     if (json.ContainsKey("status") && json.Value<int>("status") == 0)
                     {
-                        Program.UI.AddMessageToLog("Petición satisfecha correctamente", 2);
+                        Program.UI.Invoke(Program.UI.AddMessageFunction, "Petición satisfecha correctamente", 2);
                         return true;
                     }
                     else
                     {
-                        Program.UI.AddMessageToLog("Se produjo un error creando o modificando el perfil: \n" + json.ToString(), 0);
+                        Program.UI.Invoke(Program.UI.AddMessageFunction, "Se produjo un error creando o modificando el perfil: \n" + json.ToString(), 0);
                         return false;
                     }
                         
                 }
                 catch (Exception e)
                 {
-                    Program.UI.AddMessageToLog("Se ha producido un error comunicando con Registry: " + e.Message, 0);
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha producido un error comunicando con Registry: " + e.Message, 0);
                     return false;
                 }
             }
             else
             {
-                Program.UI.AddMessageToLog("La IP " + Connection.IPRegistry.ToString() + "es inválida", 0);
+                Program.UI.Invoke(Program.UI.AddMessageFunction, "La IP " + Connection.IPRegistry.ToString() + "es inválida", 0);
                 return false;
             }
         }
 
         public static bool CheckServerAvaliability()
         {
-            Program.UI.AddMessageToLog("Comprobando si Kafka esta disponible...", 1);
+            Program.UI.Invoke(Program.UI.AddMessageFunction, "Comprobando si Kafka esta disponible...", 1);
             var adminConfig = new AdminClientConfig()
             {
                 BootstrapServers = ProducerConfig.BootstrapServers
@@ -119,30 +119,23 @@ namespace Visitantes
                     while (true)
                     {
                         var ConsumeResult = Consumer.Consume();
-                        Program.UI.AddMessageToLog(ConsumeResult.Message.Value, 2);
                         JObject json = JObject.Parse(ConsumeResult.Message.Value);
-                        if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("id") && json["id"].ToString() == Program.VisitorOwn.Alias)
+                        if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("status") && json["id"].ToString() == Program.VisitorOwn.Alias)
                         {
-                            if (json["status"].ToString() == "0")
-                            {
-                                Program.UI.AddMessageToLog(json["message"].ToString(), 2);
-                                Consumer.Unsubscribe();
-                            }
-                            else
-                            {
-                                Program.UI.AddMessageToLog("El Engine no ha aceptado la petición de entrada: " + json, 0);
-                            }
+                            Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
+                            Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
                         }
                         else if (ConsumeResult != null && ConsumeResult.Topic == "mapa")
                         {
-
+                            Program.UI.Invoke(Program.UI.AddMessageFunction, "Mapa:" + json.ToString(), 1);
+                            Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
                         }
                     }
                 }
                 catch (Exception e)
                 {
                     Consumer.Close();
-                    Program.UI.AddMessageToLog("Se ha producido un error mientras se consumía un mensaje para el topic " + Topic, 0);
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha producido un error mientras se consumía un mensaje para el topic " + Topic, 0);
                     throw e;
                 }
             }
@@ -154,13 +147,13 @@ namespace Visitantes
             {
                 try
                 {
-                    Producer.Produce(Topic, new Message<Null, string> { Value = Message });
-                    Program.UI.AddMessageToLog("Se ha enviado " + Message, 2);
+                    Producer.ProduceAsync(Topic, new Message<Null, string> { Value = Message }).Wait();
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha enviado " + Message, 2);
                     return true;
                 }
                 catch (Exception e)
                 {
-                    Program.UI.AddMessageToLog("Se ha producido un error mientras se producía un mensaje para el topic " + Topic, 0);
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Se ha producido un error mientras se producía un mensaje para el topic " + Topic, 0);
                     return false;
                 }
             }

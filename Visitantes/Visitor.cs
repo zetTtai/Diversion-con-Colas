@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Visitantes
@@ -13,6 +14,7 @@ namespace Visitantes
         public string Alias;
         public string Name;
         public string Password;
+        public static Tuple<int, int> Coords;
 
         public Visitor()
         {
@@ -68,17 +70,11 @@ namespace Visitantes
         }
 
 
-        internal bool EnterPark()
+        internal bool TryEnterPark()
         {
-            if(Connection.Produce(JSONData(this, "Entrar")))
-            {
-                Connection.Consume("visitantes");
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            Task t = Task.Run(() => Connection.Consume("visitantes"));
+            Thread.Sleep(500);
+            return Connection.Produce(JSONData(this, "Entrar"));
         }
 
 
@@ -97,6 +93,64 @@ namespace Visitantes
                 password = v.Password
             });
 
+        }
+
+        private static string JSONMovement(Visitor v, Tuple<int,int> coords)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                X = coords.Item1,
+                Y = coords.Item2,
+                id = v.Alias,
+                name = v.Name,
+                password = v.Password
+            });
+
+        }
+
+        public Tuple<int, int> DecideMovement(List<Attraction> attractions)
+        {
+            if(attractions == null || attractions.Count == 0)
+            {
+                throw new ArgumentNullException();
+            }
+
+            attractions.Sort();
+
+            int dx = 0, dy = 0;
+            for(int i = 0; dx == dy && dx == 0; i++)
+            {
+                Attraction objective = attractions[i];
+                dx = objective.Coords.Item1 - Visitor.Coords.Item1;
+                dy = objective.Coords.Item2 - Visitor.Coords.Item2;
+            }
+
+            int cx = 0, cy = 0;
+            if (dx < 0 && Math.Abs(dy) < (Map.MAP_SIZE - Math.Abs(dy)))
+            {
+                cx = -1;
+            }
+            else if(dx > 0)
+            {
+                cx = 1;
+            }
+            
+            if (dy > 0 && Math.Abs(dy) < (Map.MAP_SIZE - Math.Abs(dy)))
+            {
+                cy = 1;
+            }
+            else if(dy < 0)
+            {
+                cx = -1;
+            }
+            
+            return new Tuple<int, int>(cx, cy);
+
+        }
+
+        public bool Move(Tuple<int, int> movimiento)
+        {
+            return Connection.Produce(JSONMovement(this, movimiento));
         }
     }
 }

@@ -13,11 +13,13 @@ namespace Visitantes
         /// </summary>
         
         public static Visitor VisitorOwn;
+        public static List<Attraction> Attractions = new List<Attraction>();
         public static Visitante UI;
 
         [STAThread]
         static void Main()
         {
+            Control.CheckForIllegalCrossThreadCalls = false;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             UI = new Visitante();
