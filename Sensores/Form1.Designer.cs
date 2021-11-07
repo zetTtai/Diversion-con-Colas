@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(IP));
             this.label1 = new System.Windows.Forms.Label();
             this.ValueBeingSent = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
@@ -198,6 +199,8 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.ValueBeingSent);
             this.Controls.Add(this.label1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
             this.Name = "IP";
             this.Text = "FWQ_Sensor";
             this.Load += new System.EventHandler(this.Form1_Load);
