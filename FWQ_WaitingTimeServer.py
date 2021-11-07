@@ -3,6 +3,7 @@ import sys
 import threading
 import json
 import random
+import time
 from kafka import KafkaConsumer
 
 HEADER = 2048
@@ -84,8 +85,10 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
     while True:
         consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
-            print("Leyendo mensaje")
-            updateFile(message.value)
+            if "timestamp" in message.value:
+                if message.value["timestamp"] == time.time():
+                    print("Leyendo mensaje")
+                    updateFile(message.value)
 
 def start(SERVER_KAFKA, PORT_KAFKA):
     server.listen()
