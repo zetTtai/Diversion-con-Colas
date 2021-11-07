@@ -247,6 +247,7 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     CONEX_ACTIVAS = 0
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
     map = ""
+    start = time.time() * 1000
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
     while True:
@@ -257,71 +258,72 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
             for message in consumer:
                 print("Leemos el mensaje:")
                 print(message.value) # {action: "", id: "", name: "", password: "", X:"", Y:""}
-                message = message.value
-                message = json.loads(message) # Convertimos a JSON
-                if ("status" in message) == False:
-                    if message["action"] == "Entrar":
-                        print(f"El visitante[{message['id']}] quiere entrar")
-                        if not visitorInsidePark(message["id"]):
-                            #Validamos que esté registrado en la base de datos
-                            if validateUser(message["id"], message["password"]) == True:
-                                # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
-                                POSICIONESVISITANTES.append((message["id"], 0, 0))
-                                CONEX_ACTIVAS += 1
-                                if map == "":
-                                    map = initializeMap(message["id"])
+                message = json.loads(message.value) # Convertimos a JSON
+                if "timestamp" in message:
+                    if  message["timestamp"] - start > 0.0:
+                        if ("status" in message) == False:
+                            if message["action"] == "Entrar":
+                                print(f"El visitante[{message['id']}] quiere entrar")
+                                if not visitorInsidePark(message["id"]):
+                                    #Validamos que esté registrado en la base de datos
+                                    if validateUser(message["id"], message["password"]) == True:
+                                        # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
+                                        POSICIONESVISITANTES.append((message["id"], 0, 0))
+                                        CONEX_ACTIVAS += 1
+                                        if map == "":
+                                            map = initializeMap(message["id"])
+                                        else:
+                                            map = updateMap(message["id"], map, 0, 0, 0)
+                                        # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
+                                        producer.send('mapa',map.encode(FORMAT))
+                                        producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+                                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                                    else:
+                                        producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+                                        print(f"El visitante[{message['id']}] NO está registrado")
                                 else:
-                                    map = updateMap(message["id"], map, 0, 0, 0)
-                                # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
-                                producer.send('mapa',map.encode(FORMAT))
-                                producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
-                                print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                                    print("No puede entrar si ya está dentro")
+                                    producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
+                            elif message["action"] == "Salir":
+                                print(f"El visitante[{message['id']}] quiere salir")
+                                # Comprobar que el visitante está dentro del parque
+                                if visitorInsidePark(message["id"]) == True:
+                                    #Validamos que esté registrado en la base de datos
+                                    if validateUser(message["id"], message["password"]) == True:
+                                    # Eliminamos visitante de POSICIONESVISITANTES
+                                        for visitante in POSICIONESVISITANTES:
+                                            if visitante[0] == message["id"]:
+                                                POSICIONESVISITANTES.remove(visitante)
+                                                break
+                                        CONEX_ACTIVAS -= 1
+                                        producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+                                        print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+                                    else:
+                                        producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+                                        print(f"El visitante[{message['id']}] NO está registrado")
+                                else:
+                                    print("No puede salir si ya esta fuera")
+                                    # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
+                                    producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
+                            elif message["action"] == "Movimiento":
+                                print(f"El visitante[{message['id']}] ha enviado un movimiento")
+                                # Comprobar que el visitante no está dentro del parque
+                                if visitorInsidePark(message["id"]) == True:
+                                    #Validamos que esté registrado en la base de datos
+                                    if validateUser(message["id"], message["password"]) == True:
+                                        map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
+                                        # Enviamos el mapa actualizado
+                                        producer.send('mapa',map.encode(FORMAT))
+                                        producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+                                    else:
+                                        producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+                                        print(f"El visitante[{message['id']}] NO está registrado")
+                                else:
+                                    print("No puede realizar movimientos porque no está dentro del parque")
+                                    producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
                             else:
-                                producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
-                                print(f"El visitante[{message['id']}] NO está registrado")
-                        else:
-                            print("No puede entrar si ya está dentro")
-                            producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
-                    elif message["action"] == "Salir":
-                        print(f"El visitante[{message['id']}] quiere salir")
-                        # Comprobar que el visitante está dentro del parque
-                        if visitorInsidePark(message["id"]) == True:
-                            #Validamos que esté registrado en la base de datos
-                            if validateUser(message["id"], message["password"]) == True:
-                            # Eliminamos visitante de POSICIONESVISITANTES
-                                for visitante in POSICIONESVISITANTES:
-                                    if visitante[0] == message["id"]:
-                                        POSICIONESVISITANTES.remove(visitante)
-                                        break
-                                CONEX_ACTIVAS -= 1
-                                producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
-                                print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
-                            else:
-                                producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
-                                print(f"El visitante[{message['id']}] NO está registrado")
-                        else:
-                            print("No puede salir si ya esta fuera")
-                            # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
-                            producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
-                    elif message["action"] == "Movimiento":
-                        print(f"El visitante[{message['id']}] ha enviado un movimiento")
-                        # Comprobar que el visitante no está dentro del parque
-                        if visitorInsidePark(message["id"]) == True:
-                            #Validamos que esté registrado en la base de datos
-                            if validateUser(message["id"], message["password"]) == True:
-                                map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
-                                # Enviamos el mapa actualizado
-                                producer.send('mapa',map.encode(FORMAT))
-                                producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
-                            else:
-                                producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
-                                print(f"El visitante[{message['id']}] NO está registrado")
-                        else:
-                            print("No puede realizar movimientos porque no está dentro del parque")
-                            producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
-                    else:
-                        print("Action no controlada")
-                        producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
+                                print("Action no controlada")
+                                producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
         else:
             print("AFORO ALCANZADO")
             producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
