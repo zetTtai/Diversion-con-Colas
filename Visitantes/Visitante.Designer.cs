@@ -141,7 +141,7 @@
             // 
             // Temporizador
             // 
-            this.Temporizador.Interval = 3;
+            this.Temporizador.Interval = 5000;
             this.Temporizador.Tick += new System.EventHandler(this.Temporizador_Tick);
             // 
             // label1

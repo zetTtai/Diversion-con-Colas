@@ -17,9 +17,9 @@ namespace Visitantes
         public Tuple<int, int> Coords;
 
         public static Task ConsumeVisitantes;
-        public static bool ReadingVisitantes;
+        public static bool ReadingVisitantes = false;
         public static Task ConsumeMapa;
-        public static bool ReadingMapa;
+        public static bool ReadingMapa = false;
 
         public Visitor()
         {
@@ -118,13 +118,13 @@ namespace Visitantes
         {
             return JsonConvert.SerializeObject(new
             {
+                action = "Movimiento",
                 X = coords.Item1,
                 Y = coords.Item2,
                 id = v.Alias,
                 name = v.Name,
                 password = v.Password
             });
-
         }
 
         internal Tuple<int, int> DecideMovement(List<Attraction> attractions)
@@ -169,7 +169,7 @@ namespace Visitantes
 
         internal bool Move(Tuple<int, int> movimiento)
         {
-            return Connection.Produce(JSONMovement(this, movimiento));
+            return Connection.Produce(JSONMovement(this, movimiento), "visitantes");
         }
 
         internal static void GetMap()

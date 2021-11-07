@@ -49,7 +49,6 @@ namespace Visitantes
          * EVENT HANDLERS
          * 
          */
-
         private void Registro_Click(object sender, EventArgs e)
         {
             AddMessageToLog("Procediendo a registrar al usuario", 1);
@@ -156,8 +155,9 @@ namespace Visitantes
                 if (json["status"].ToString() == "0")
                 {
                     Program.UI.Invoke(AddMessageFunction, "Se ha salido del parque correctamente", 2);
-                    _wannaEnter = false;
+                    _wannaExit = false;
                     Visitor.StopConsumingVisitantes();
+                    Temporizador.Enabled = false;
                     ParkStatus(true);
                 }
                 else
@@ -168,6 +168,7 @@ namespace Visitantes
             }
             else if(json.ContainsKey("atracciones"))
             {
+                Temporizador.Enabled = true;
                 Program.UI.Invoke(AddMessageFunction, "Mapa: " + json, 2);
                 Program.Attractions.Clear();
                 foreach (var item in json["atracciones"])
@@ -193,9 +194,21 @@ namespace Visitantes
 
         private void ActualizarMapa()
         {
+            foreach(Panel p in Mapa.Controls)
+            {
+                p.BackColor = Color.Transparent;
+                p.Controls.Clear();
+            }
+
             foreach (Visitor v in Program.Visitors)
             {
                 ((Panel)Mapa.Controls.Find(v.Coords.Item1 + "," + v.Coords.Item2, false)[0]).BackColor = ColorConverter(v.Alias);
+
+                if(v.Alias == Program.VisitorOwn.Alias)
+                {
+                    Program.VisitorOwn.Coords = v.Coords;
+                }
+
             }
 
             foreach (Attraction a in Program.Attractions)
@@ -219,7 +232,6 @@ namespace Visitantes
             {
                 AddMessageToLog("Se ha producido un error comunicando el movimiento", 0);
             }
-
         }
 
 
@@ -293,7 +305,7 @@ namespace Visitantes
 
         private Color ColorConverter(string colorHex)
         {
-            int argb = Int32.Parse(colorHex.Replace("#", ""), NumberStyles.HexNumber);
+            int argb = Int32.Parse(colorHex.Replace("#", "FF"), NumberStyles.HexNumber);
             return Color.FromArgb(argb);
         }
 

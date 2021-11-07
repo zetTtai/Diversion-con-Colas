@@ -117,11 +117,10 @@ namespace Visitantes
                 {
                     while (true)
                     {
-                        if((Topic == "visitantes" && Visitor.ReadingVisitantes) || (Topic == "mapa" && Visitor.ReadingMapa))
-                        {
+                        /*if((Topic == "visitantes" && Visitor.ReadingVisitantes) || (Topic == "mapa" && Visitor.ReadingMapa))
+                        {*/
                             var ConsumeResult = Consumer.Consume();
                             JObject json = JObject.Parse(ConsumeResult.Message.Value);
-                            Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
                             if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("status") && json["id"].ToString() == Program.VisitorOwn.Alias)
                             {
                                 if (ConsumeResult.Message.Timestamp.UnixTimestampMs >= Program.TimeStamp)
@@ -138,12 +137,12 @@ namespace Visitantes
                                     Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
                                 }
                             }
-                        } 
+                        /*} 
                         else
                         {
                             Program.UI.Invoke(Program.UI.AddMessageFunction, "Eh? Que hago aqui? T:" + Topic + ", Map:" + Visitor.ReadingMapa + ", V:" + Visitor.ReadingVisitantes, 0);
                             break;
-                        }
+                        }*/
                     }
                 }
                 catch (Exception e)
