@@ -144,12 +144,10 @@ def updateMap(userID, mapa, id, movX, movY):
         conn.close()
     conn.close()
     # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos
-    # for row, atraccion in rows, mapa["atracciones"]:
-    #     atraccion["tiempo"] = row[0]
-    for row in rows: # [(id, wait_time), ...]
-        for atraccion in mapa["atracciones"]:
-            if atraccion["id"] == row[0]:
-                atraccion["tiempo"] = row[1]
+    zip_object = zip(rows, mapa["atracciones"])
+    # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos
+    for row, atraccion in zip_object:
+        atraccion["tiempo"] = row[0]
     
     # Actualizamos la lista de posiciones
     if id == 0 and movX == 0 and movY == 0: # Nuevo visitante
