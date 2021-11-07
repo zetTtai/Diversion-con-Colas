@@ -94,14 +94,14 @@ def connectionSTEtoEngine():
         thread.start()
 
 def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
-    start = time.time()
+    start = time.time()*1000
     while True:
         consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             message = json.loads(message.value)
             if "timestamp" in message:
-                if message["timestamp"] > start: # Solo leemos los mensajes después del arranque de STE
-                # if not isclose(message["timestamp"], start, rel_tol=1e-1):
+                if message["timestamp"] - start > 0.0:
+                    print(message["timestamp"] - start)
                     print("Leyendo mensaje")
                     updateFile(message)
 
