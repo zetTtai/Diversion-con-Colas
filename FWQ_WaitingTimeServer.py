@@ -64,7 +64,6 @@ def readFile():
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
     print("Engine se ha conectado")
-    # Primer mensaje para obtener la capacidad de las atracciones
         
     print("Extrayendo datos del fichero")
     msg = json.dumps(readFile()) # Lo convertimos a JSON
@@ -87,7 +86,6 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
         for message in consumer:
             print("Leyendo mensaje")
             updateFile(message.value)
-            consumer.commit()
 
 def start(SERVER_KAFKA, PORT_KAFKA):
     server.listen()
