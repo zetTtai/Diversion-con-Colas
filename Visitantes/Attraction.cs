@@ -8,15 +8,9 @@ namespace Visitantes
 {
     internal class Attraction : IComparable<Attraction>
     {
-        public int Id;
+        public string Id;
         public int TiempoEspera;
         public Tuple<int, int> Coords;
-
-        public Attraction(int id, int x, int y)
-        {
-            Id = id;
-            Coords = new Tuple<int, int>(x, y);
-        }
 
         public int CompareTo(Attraction other)
         {

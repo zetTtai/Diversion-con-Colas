@@ -14,7 +14,12 @@ namespace Visitantes
         public string Alias;
         public string Name;
         public string Password;
-        public static Tuple<int, int> Coords;
+        public Tuple<int, int> Coords;
+
+        public static Task ConsumeVisitantes;
+        public static bool ReadingVisitantes;
+        public static Task ConsumeMapa;
+        public static bool ReadingMapa;
 
         public Visitor()
         {
@@ -72,15 +77,29 @@ namespace Visitantes
 
         internal bool TryEnterPark()
         {
-            Task t = Task.Run(() => Connection.Consume("visitantes"));
-            Thread.Sleep(500);
+            if(!ReadingVisitantes)
+            {
+                ReadingVisitantes = true;
+                ConsumeVisitantes = Task.Run(() => Connection.Consume("visitantes"));
+            }
             return Connection.Produce(JSONData(this, "Entrar"));
+        }
+
+        internal static void StopConsumingVisitantes()
+        {
+            if(ReadingVisitantes)
+            {
+                ReadingVisitantes = false;
+            }
         }
 
 
         internal bool Exit()
         {
-            return Connection.Produce(JSONData(this, "Salir"));
+            bool b = Connection.Produce(JSONData(this, "Salir"));
+            Visitor.StopConsumingVisitantes();
+            Visitor.StopReadingMapa();
+            return b;
         }
 
         private static string JSONData(Visitor v, string mode)
@@ -108,7 +127,7 @@ namespace Visitantes
 
         }
 
-        public Tuple<int, int> DecideMovement(List<Attraction> attractions)
+        internal Tuple<int, int> DecideMovement(List<Attraction> attractions)
         {
             if(attractions == null || attractions.Count == 0)
             {
@@ -121,8 +140,8 @@ namespace Visitantes
             for(int i = 0; dx == dy && dx == 0; i++)
             {
                 Attraction objective = attractions[i];
-                dx = objective.Coords.Item1 - Visitor.Coords.Item1;
-                dy = objective.Coords.Item2 - Visitor.Coords.Item2;
+                dx = objective.Coords.Item1 - Program.VisitorOwn.Coords.Item1;
+                dy = objective.Coords.Item2 - Program.VisitorOwn.Coords.Item2;
             }
 
             int cx = 0, cy = 0;
@@ -148,9 +167,26 @@ namespace Visitantes
 
         }
 
-        public bool Move(Tuple<int, int> movimiento)
+        internal bool Move(Tuple<int, int> movimiento)
         {
             return Connection.Produce(JSONMovement(this, movimiento));
+        }
+
+        internal static void GetMap()
+        {
+            if (!ReadingMapa)
+            {
+                ReadingMapa = true;
+                ConsumeMapa = Task.Run(() => Connection.Consume("mapa"));
+            }
+        }
+
+        internal static void StopReadingMapa()
+        {
+            if (ReadingMapa)
+            {
+                ReadingMapa = false;
+            }
         }
     }
 }

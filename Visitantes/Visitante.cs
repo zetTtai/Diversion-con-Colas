@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Drawing;
+using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Visitantes
@@ -34,7 +36,7 @@ namespace Visitantes
                         Location = new Point(PanelSize * j, PanelSize * i),
                         Width = PanelSize,
                         Height = PanelSize,
-                        Name = "{$i},{$j}",
+                        Name = i + "," + j,
                         BackColor = Color.FromArgb(1303030),
                         BorderStyle = BorderStyle.FixedSingle,
                     };
@@ -52,7 +54,15 @@ namespace Visitantes
         {
             AddMessageToLog("Procediendo a registrar al usuario", 1);
             Connection.InitializeRegistryServer(IPValueRegistry.Text, (int)PortValueRegistry.Value);
-            Program.VisitorOwn = new Visitor();
+            if (Program.VisitorOwn is null)
+            {
+                Program.VisitorOwn = new Visitor
+                {
+                    Alias = VisitorAlias.Text,
+                    Name = VisitorName.Text,
+                    Password = VisitorPassword.Text
+                };
+            }
             if(Program.VisitorOwn.SignIn(VisitorAlias.Text, VisitorName.Text, VisitorPassword.Text))
             {
                 RegisterStatus(false);
@@ -62,6 +72,15 @@ namespace Visitantes
         }
         private void Editar_Click(object sender, EventArgs e)
         {
+            if (Program.VisitorOwn is null)
+            {
+                Program.VisitorOwn = new Visitor
+                {
+                    Alias = VisitorAlias.Text,
+                    Name = VisitorName.Text,
+                    Password = VisitorPassword.Text
+                };
+            }
             if (Program.VisitorOwn.EditInfo(VisitorAlias.Text, VisitorName.Text, VisitorPassword.Text))
             {
 
@@ -109,10 +128,9 @@ namespace Visitantes
         {
             _wannaExit = true;
             AddMessageToLog("Intentando salir del parque...", 1);
-            if(Program.VisitorOwn.Exit())
+            if(Program.VisitorOwn != null && Program.VisitorOwn.Exit())
             {
                 VisitorStatus(true);
-                ParkStatus(false);
             }
         }
 
@@ -120,11 +138,12 @@ namespace Visitantes
         {
             if (_wannaEnter && json.ContainsKey("status"))
             {
-                if(json["status"].ToString() == "0")
+                if(json["status"].ToString() == "0" || json["status"].ToString() == "3")
                 {
                     Program.UI.Invoke(AddMessageFunction, "Se ha entrado al parque correctamente", 2);
                     _wannaEnter = false;
                     ParkStatus(false);
+                    Visitor.GetMap();
                 }
                 else
                 {
@@ -138,6 +157,7 @@ namespace Visitantes
                 {
                     Program.UI.Invoke(AddMessageFunction, "Se ha salido del parque correctamente", 2);
                     _wannaEnter = false;
+                    Visitor.StopConsumingVisitantes();
                     ParkStatus(true);
                 }
                 else
@@ -146,9 +166,48 @@ namespace Visitantes
                     ParkStatus(false);
                 }
             }
-            else
+            else if(json.ContainsKey("atracciones"))
             {
-                
+                Program.UI.Invoke(AddMessageFunction, "Mapa: " + json, 2);
+                Program.Attractions.Clear();
+                foreach (var item in json["atracciones"])
+                {
+                    Program.Attractions.Add(new Attraction
+                    {
+                        Id = item["id"].ToString(),
+                        TiempoEspera = int.Parse(item["tiempo"].ToString()),
+                        Coords = new Tuple<int, int>(int.Parse(item["X"].ToString()), int.Parse(item["Y"].ToString()))
+                    });
+                }
+                Program.Visitors.Clear();
+                foreach (var item in json["visitantes"])
+                {
+                    Program.Visitors.Add(new Visitor {
+                        Alias = item["id"].ToString(),
+                        Coords = new Tuple<int, int>(int.Parse(item["X"].ToString()), int.Parse(item["Y"].ToString()))
+                    });
+                }
+                ActualizarMapa();
+            }
+        }
+
+        private void ActualizarMapa()
+        {
+            foreach (Visitor v in Program.Visitors)
+            {
+                ((Panel)Mapa.Controls.Find(v.Coords.Item1 + "," + v.Coords.Item2, false)[0]).BackColor = ColorConverter(v.Alias);
+            }
+
+            foreach (Attraction a in Program.Attractions)
+            {
+                Label l = new Label
+                {
+                    Text = a.Id.ToString().ToCharArray()[0].ToString() + a.Id.ToString().ToCharArray()[a.Id.Length - 1].ToString(),
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = Color.White
+                };
+                ((Panel)Mapa.Controls.Find(a.Coords.Item1 + "," + a.Coords.Item2, false)[0]).Controls.Add(l);
             }
         }
 
@@ -217,6 +276,8 @@ namespace Visitantes
             VisitorAlias.Enabled = status;
             VisitorName.Enabled = status;
             VisitorPassword.Enabled = status;
+            Registro.Enabled = status;
+            Editar.Enabled = status;
         }
 
         private void ParkStatus(bool status)
@@ -228,6 +289,12 @@ namespace Visitantes
         private String HexConverter(Color c)
         {
             return "#" + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2");
+        }
+
+        private Color ColorConverter(string colorHex)
+        {
+            int argb = Int32.Parse(colorHex.Replace("#", ""), NumberStyles.HexNumber);
+            return Color.FromArgb(argb);
         }
 
         private void Visitante_FormClosing(object sender, FormClosingEventArgs e)

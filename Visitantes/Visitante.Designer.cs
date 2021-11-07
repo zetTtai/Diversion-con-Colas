@@ -127,6 +127,7 @@
             // Salir
             // 
             this.Salir.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(12)))));
+            this.Salir.Enabled = false;
             this.Salir.FlatAppearance.BorderSize = 0;
             this.Salir.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Salir.ForeColor = System.Drawing.SystemColors.ControlLightLight;
@@ -198,7 +199,7 @@
             this.Logs.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
             this.Logs.Location = new System.Drawing.Point(741, 12);
             this.Logs.Name = "Logs";
-            this.Logs.Size = new System.Drawing.Size(632, 500);
+            this.Logs.Size = new System.Drawing.Size(771, 500);
             this.Logs.TabIndex = 8;
             // 
             // label5
@@ -292,7 +293,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(26)))), ((int)(((byte)(30)))));
-            this.ClientSize = new System.Drawing.Size(1385, 523);
+            this.ClientSize = new System.Drawing.Size(1524, 523);
             this.Controls.Add(this.Editar);
             this.Controls.Add(this.Entrar);
             this.Controls.Add(this.PortValueKafka);

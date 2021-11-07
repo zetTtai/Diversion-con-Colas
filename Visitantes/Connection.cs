@@ -21,7 +21,6 @@ namespace Visitantes
             SaslUsername = "",
             SaslPassword = "",
             GroupId = "visitantes",
-            EnableAutoCommit = false
         };
 
         private static ProducerConfig ProducerConfig = new ProducerConfig
@@ -118,17 +117,32 @@ namespace Visitantes
                 {
                     while (true)
                     {
-                        var ConsumeResult = Consumer.Consume();
-                        JObject json = JObject.Parse(ConsumeResult.Message.Value);
-                        if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("status") && json["id"].ToString() == Program.VisitorOwn.Alias)
+                        if((Topic == "visitantes" && Visitor.ReadingVisitantes) || (Topic == "mapa" && Visitor.ReadingMapa))
                         {
+                            var ConsumeResult = Consumer.Consume();
+                            JObject json = JObject.Parse(ConsumeResult.Message.Value);
                             Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
-                            Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
-                        }
-                        else if (ConsumeResult != null && ConsumeResult.Topic == "mapa")
+                            if (ConsumeResult != null && ConsumeResult.Topic == "visitantes" && json.ContainsKey("status") && json["id"].ToString() == Program.VisitorOwn.Alias)
+                            {
+                                if (ConsumeResult.Message.Timestamp.UnixTimestampMs >= Program.TimeStamp)
+                                {
+                                    Program.UI.Invoke(Program.UI.AddMessageFunction, json.ToString(), 1);
+                                    Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
+                                }
+                            }
+                            else if (ConsumeResult != null && ConsumeResult.Topic == "mapa")
+                            {
+                                if (ConsumeResult.Message.Timestamp.UnixTimestampMs >= Program.TimeStamp)
+                                {
+                                    Program.UI.Invoke(Program.UI.AddMessageFunction, "Mapa:" + json.ToString(), 1);
+                                    Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
+                                }
+                            }
+                        } 
+                        else
                         {
-                            Program.UI.Invoke(Program.UI.AddMessageFunction, "Mapa:" + json.ToString(), 1);
-                            Program.UI.Invoke(Program.UI.EngineResponseFunction, json);
+                            Program.UI.Invoke(Program.UI.AddMessageFunction, "Eh? Que hago aqui? T:" + Topic + ", Map:" + Visitor.ReadingMapa + ", V:" + Visitor.ReadingVisitantes, 0);
+                            break;
                         }
                     }
                 }
