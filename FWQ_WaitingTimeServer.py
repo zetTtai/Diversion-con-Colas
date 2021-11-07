@@ -101,7 +101,6 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
             message = json.loads(message.value)
             if "timestamp" in message:
                 if message["timestamp"] - start > 0.0:
-                    print(message["timestamp"] - start)
                     print("Leyendo mensaje")
                     updateFile(message)
 
