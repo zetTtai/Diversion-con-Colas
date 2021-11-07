@@ -145,7 +145,6 @@ def updateMap(userID, mapa, id, movX, movY):
     conn.close()
     # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos
     zip_object = zip(rows, mapa["atracciones"])
-    # Suponiendo que todas las atracciones siguen el mismo orden que en la base de datos
     for row, atraccion in zip_object:
         atraccion["tiempo"] = row[0]
     
