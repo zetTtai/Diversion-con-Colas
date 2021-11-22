@@ -4,8 +4,10 @@ import sys
 import sqlite3
 import traceback
 import json
-#API
+#Práctica 3
 from flask import Flask, make_response, request, jsonify
+import uuid
+import hashlib
 
 HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -39,8 +41,108 @@ RESPUESTA = {
     }
 }
 
-app = Flask(__name__)
+#############################################################
+######################### FUNCIONES #########################
+#############################################################
+
+def deleteVisitor(msg):
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    try:
+        if check_password(cursor, msg["id"], msg["password"]):
+            cursor.execute('DELETE FROM visitantes WHERE id = ?', (msg["id"],))
+            conn.commit()
+        else:
+            print("El usuario y la contraseña no coinciden")
+            conn.close()
+            return False
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
+    conn.close()
+    return True
+
+def createVisitor(msg):
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+
+    visitante= (msg["id"], msg["name"], hash_password(msg["password"]))
+    try:
+        # Buscamos si ya existe ese perfil
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}"')
+        rows = cursor.fetchall()
+        if rows:
+            conn.close()
+            return False
+        else:
+            cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
+            conn.commit()
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
+    conn.close()
+    return True
+
+def editVisitor(msg): 
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    # ID no se puede cambiar
+    try:
+        if check_password(cursor, msg["id"], msg["password"]):
+            cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], hash_password(msg["new_password"]), msg["id"]))
+            conn.commit()
+        else:
+            print("El usuario y la contraseña no coinciden")
+            conn.close()
+            return False
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
+
+    print(f"Cerrando conexión con la base de datos")
+    conn.close()
+    return True
+
+def hash_password(password):
+    # uuid is used to generate a random number
+    salt = uuid.uuid4().hex
+    return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt
+
+def check_password(cursor, id, key):
+    # Comprobamos que sea el usuario y la contraesña coincidan con lo guardado en la base de datos
+    cursor.execute(f'SELECT password FROM visitantes WHERE id = "{id}"')
+    row = cursor.fetchone()
+    # Si existe el visitante
+    if row: 
+        password, salt = row[0].split(':')
+        # Comprobamos la contraseña pasada por parámetros (visitante[1]) con la almacenada en la base de datos (row[0])
+        return password == hashlib.sha256(salt.encode() + key.encode()).hexdigest()
+    print("Ese usuario no existe")
+    return False
+
+#######################################################
 ######################### API #########################
+#######################################################
+
+app = Flask(__name__)
 
 @app.route("/profile", methods=["POST"])
 def create():
@@ -79,82 +181,9 @@ def connectionAPI():
     if __name__ == '__main__':
         app.run(debug=False, port=API_PORT)
 
+##########################################################
 ######################### SOCKET #########################
-
-def deleteVisitor(msg):
-    conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
-    cursor = conn.cursor()
-    # TODO: Encriptar password
-    visitante= (msg["id"], msg["password"])
-    try:
-        # Buscamos si ya existe ese perfil y que la contraseña sea la correcta TODO: Falta encriptar
-        cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}" AND password = "{msg["password"]}"')
-        rows = cursor.fetchall()
-        if rows:
-            cursor.execute('DELETE FROM visitantes WHERE id = ? AND password = ?', visitante)
-            conn.commit()
-        else:
-            conn.close()
-            return False
-    except sqlite3.Error as er:
-        print('SQLite error: %s' % (' '.join(er.args)))
-        print("Exception class is: ", er.__class__)
-        print('SQLite traceback: ')
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(traceback.format_exception(exc_type, exc_value, exc_tb))
-        conn.close()
-        return False
-    conn.close()
-    return True
-
-def createVisitor(msg):
-    conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
-    cursor = conn.cursor()
-    # TODO: Encriptar password
-    visitante= (msg["id"], msg["name"], msg["password"])
-    try:
-        # Buscamos si ya existe ese perfil
-        cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}"')
-        rows = cursor.fetchall()
-        if rows:
-            conn.close()
-            return False
-        else:
-            cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
-            conn.commit()
-    except sqlite3.Error as er:
-        print('SQLite error: %s' % (' '.join(er.args)))
-        print("Exception class is: ", er.__class__)
-        print('SQLite traceback: ')
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(traceback.format_exception(exc_type, exc_value, exc_tb))
-        conn.close()
-        return False
-    conn.close()
-    return True
-
-def editVisitor(msg): 
-    conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
-    cursor = conn.cursor()
-    # ID no se puede cambiar
-    try:
-        cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], msg["password"], msg["id"]))
-        conn.commit()
-    except sqlite3.Error as er:
-        print('SQLite error: %s' % (' '.join(er.args)))
-        print("Exception class is: ", er.__class__)
-        print('SQLite traceback: ')
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(traceback.format_exception(exc_type, exc_value, exc_tb))
-        conn.close()
-        return False
-
-    print(f"Cerrando conexión con la base de datos")
-    conn.close()
-    return True
+##########################################################
 
 def handle_client(conn, addr):
     print(f"[NUEVA CONEXION] {addr} connected.")
@@ -187,7 +216,6 @@ def handle_client(conn, addr):
         else:   
             print("Opción incorrecta")
             respuesta = RESPUESTA["1"]
-
         respuesta = json.dumps(respuesta)
         print("Enviando respuesta...")
         conn.send(respuesta.encode(FORMAT))
@@ -210,7 +238,9 @@ def start():
     threadAPI = threading.Thread(target=connectionAPI)
     threadAPI.start()
 
+#########################################################
 ######################### MAIN ##########################
+#########################################################
 
 if(len(sys.argv) == 3):
     API_PORT = int(sys.argv[2])
