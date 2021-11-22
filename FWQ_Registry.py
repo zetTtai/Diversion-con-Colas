@@ -5,7 +5,7 @@ import sqlite3
 import traceback
 import json
 #API
-from flask import Flask, jsonify, request
+from flask import Flask, make_response, request, jsonify
 
 HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -20,7 +20,7 @@ RESPUESTA = {
 
     "1": {
         "status" : "1",
-        "message" : "Opción es incorrecta [create | edit]"
+        "message" : "Opción es incorrecta [create | edit | delete]"
     },
 
     "2": {
@@ -31,6 +31,11 @@ RESPUESTA = {
     "3": {
         "status" : "3",
         "message" : "Fallo al editar el perfil"
+    },
+
+    "4": {
+        "status" : "4",
+        "message" : "Fallo al borrar el perfil"
     }
 }
 
@@ -39,31 +44,69 @@ app = Flask(__name__)
 
 @app.route("/profile", methods=["POST"])
 def create():
-    response = app.response_class(
-        message = json.dumps(RESPUESTA["0"]),
-        status=200,
-        mimetype='application/json'
-    )
-    if createVisitor(request.json()):
+    print("Creando perfil mediante API")
+    if createVisitor(request.json):
+        response = make_response(jsonify(RESPUESTA["0"]), 200)
+        response.headers["Content-Type"] = "application/json"
         return response
-    
-    response.status = 403
-    response.message = json.dumps(RESPUESTA["2"])
+    response = make_response(jsonify(RESPUESTA["2"]), 403)
+    response.headers["Content-Type"] = "application/json"
     return response
 
 @app.route("/profile", methods=["PUT"])
 def update():
-    return "Pang!"
+    print("Actualizando perfil mediante API")
+    if editVisitor(request.json):
+        response = make_response(jsonify(RESPUESTA["0"]), 200)
+        response.headers["Content-Type"] = "application/json"
+        return response
+    response = make_response(jsonify(RESPUESTA["3"]), 403)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 @app.route("/profile", methods=["DELETE"])
 def remove():
-    return "Pung!"
+    print("Eliminando perfil mediante API")
+    if deleteVisitor(request.json):
+        response = make_response(jsonify(RESPUESTA["0"]), 200)
+        response.headers["Content-Type"] = "application/json"
+        return response
+    response = make_response(jsonify(RESPUESTA["4"]), 403)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 def connectionAPI():
     if __name__ == '__main__':
         app.run(debug=False, port=API_PORT)
 
 ######################### SOCKET #########################
+
+def deleteVisitor(msg):
+    conn = sqlite3.connect('db/database.db')
+    print(f"Establecida conexión con la base de datos")
+    cursor = conn.cursor()
+    # TODO: Encriptar password
+    visitante= (msg["id"], msg["password"])
+    try:
+        # Buscamos si ya existe ese perfil y que la contraseña sea la correcta TODO: Falta encriptar
+        cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}" AND password = "{msg["password"]}"')
+        rows = cursor.fetchall()
+        if rows:
+            cursor.execute('DELETE FROM visitantes WHERE id = ? AND password = ?', visitante)
+            conn.commit()
+        else:
+            conn.close()
+            return False
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        conn.close()
+        return False
+    conn.close()
+    return True
 
 def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
