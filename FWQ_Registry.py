@@ -5,7 +5,7 @@ import sqlite3
 import traceback
 import json
 #API
-from flask import Flask
+from flask import Flask, jsonify, request
 
 HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -37,9 +37,27 @@ RESPUESTA = {
 app = Flask(__name__)
 ######################### API #########################
 
-@app.route("/ping", methods=["GET"])
-def ping():
-    return "Pong!"
+@app.route("/profile", methods=["POST"])
+def create():
+    response = app.response_class(
+        message = json.dumps(RESPUESTA["0"]),
+        status=200,
+        mimetype='application/json'
+    )
+    if createVisitor(request.json()):
+        return response
+    
+    response.status = 403
+    response.message = json.dumps(RESPUESTA["2"])
+    return response
+
+@app.route("/profile", methods=["PUT"])
+def update():
+    return "Pang!"
+
+@app.route("/profile", methods=["DELETE"])
+def remove():
+    return "Pung!"
 
 def connectionAPI():
     if __name__ == '__main__':
@@ -51,6 +69,7 @@ def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
+    # TODO: Encriptar password
     visitante= (msg["id"], msg["name"], msg["password"])
     try:
         # Buscamos si ya existe ese perfil
