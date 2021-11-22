@@ -177,6 +177,13 @@ def handle_client(conn, addr):
                     respuesta = RESPUESTA["0"]
                 else:
                     respuesta = RESPUESTA["3"]
+        elif msg["action"] == "delete":
+            print("Borrando perfil de visitante...")
+            if(editVisitor(msg)):
+                print("¡Hecho!")
+                respuesta = RESPUESTA["0"]
+            else:
+                respuesta = RESPUESTA["4"]
         else:   
             print("Opción incorrecta")
             respuesta = RESPUESTA["1"]
