@@ -4,11 +4,13 @@ import sys
 import sqlite3
 import traceback
 import json
+#API
+from flask import Flask
 
 HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
-FIN = "FIN"
+FIRST = True
 
 RESPUESTA = {
     "0": {
@@ -31,6 +33,19 @@ RESPUESTA = {
         "message" : "Fallo al editar el perfil"
     }
 }
+
+app = Flask(__name__)
+######################### API #########################
+
+@app.route("/ping", methods=["GET"])
+def ping():
+    return "Pong!"
+
+def connectionAPI():
+    if __name__ == '__main__':
+        app.run(debug=False, port=API_PORT)
+
+######################### SOCKET #########################
 
 def createVisitor(msg):
     conn = sqlite3.connect('db/database.db')
@@ -110,8 +125,7 @@ def handle_client(conn, addr):
     print("Finalizando conexión con Registry.")
     conn.close()
         
-def start():
-    server.listen()
+def connectionSocket():
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     while True:
         conn, addr = server.accept()
@@ -119,18 +133,25 @@ def start():
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
-        
+    
+def start():
+    server.listen()
+    threadSocket = threading.Thread(target=connectionSocket)
+    threadSocket.start()
+    threadAPI = threading.Thread(target=connectionAPI)
+    threadAPI.start()
 
 ######################### MAIN ##########################
 
-if(len(sys.argv) == 2):
+if(len(sys.argv) == 3):
+    API_PORT = int(sys.argv[2])
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    PORT= int(sys.argv[1])
+    PORT = int(sys.argv[1])
     ADDR = (SERVER, PORT)
+    print(ADDR)
     server.bind(ADDR)
-
     print("[STARTING] Servidor inicializándose...")
-
     start()
+
 else:
-    print ("Oops!. Parece que algo falló. Necesito estos argumentos: <Puerto_Escucha>")
+    print ("Oops!. Parece que algo falló. Necesito estos argumentos: <Puerto_Escucha> <Puerto_Escucha_API>")
