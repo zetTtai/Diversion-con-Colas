@@ -179,7 +179,7 @@ def remove():
 
 def connectionAPI():
     if __name__ == '__main__':
-        app.run(debug=False, port=API_PORT)
+        app.run(debug=False, port=API_PORT, ssl_context='adhoc')
 
 ##########################################################
 ######################### SOCKET #########################
