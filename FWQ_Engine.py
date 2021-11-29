@@ -5,6 +5,7 @@ import sqlite3
 import json
 import traceback
 import threading
+import os
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 
@@ -19,6 +20,8 @@ XSEC = 10
 MAXSIZE = 19
 # Variable global que controla las posiciones de todos los visitantes monitorizados: Lista de tuplas [(ID, X, Y)]
 POSICIONESVISITANTES = []
+# Variable global que contiene la dirección del backup del mapa del parque de atracciones
+BACKUP="mapa.json"
 
 RESPUESTA = {
     "0": {
@@ -292,11 +295,29 @@ def procesarMovimiento(producer, message, map):
         print("No puede realizar movimientos porque no está dentro del parque")
         producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
 
+def restoreMap():
+    # Comprobamos si hay información en el BACKUP
+    if os.stat(BACKUP).st_size != 0:
+        fichero = open(BACKUP, 'r')
+        map = json.load(fichero)
+        fichero.close()
+        # Actualizamos POSICIONESVISITANTES con los visitantes del fichero
+        for visitante in map["visitantes"]:
+            POSICIONESVISITANTES.append((visitante["id"], visitante["X"], visitante["Y"]))
+        return map
+    return ""
+
+def backUpMap(map):
+    fichero = open(BACKUP,"w")
+    fichero.write(map)
+    fichero.close()
+
 
 def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     CONEX_ACTIVAS = 0
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
-    map = ""
+
+    map = restoreMap()
     start = time.time() * 1000
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
@@ -320,6 +341,8 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                             else:
                                 print("Action no controlada")
                                 producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
+                            # Realizamos backup por cada acción que realizan los visitantes
+                            backUpMap(map)
                     else:
                         if visitorInsidePark(message["id"]) == False:
                             print("AFORO ALCANZADO")
