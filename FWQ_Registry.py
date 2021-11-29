@@ -8,6 +8,7 @@ import json
 from flask import Flask, make_response, request, jsonify
 import uuid
 import hashlib
+import datetime
 
 HEADER = 2048
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -45,16 +46,18 @@ RESPUESTA = {
 ######################### FUNCIONES #########################
 #############################################################
 
-def deleteVisitor(msg):
+def deleteVisitor(msg, ipVisitante):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
+    params = f'ID: {msg["id"]} | PASSWORD: {hash_password(msg["password"])}'
     try:
         if check_password(cursor, msg["id"], msg["password"]):
             cursor.execute('DELETE FROM visitantes WHERE id = ?', (msg["id"],))
             conn.commit()
         else:
             print("El usuario y la contraseña no coinciden")
+            generateRegister(cursor, conn, "Error", ipVisitante, params)
             conn.close()
             return False
     except sqlite3.Error as er:
@@ -65,10 +68,11 @@ def deleteVisitor(msg):
         print(traceback.format_exception(exc_type, exc_value, exc_tb))
         conn.close()
         return False
+    generateRegister(cursor, conn, "Baja", ipVisitante, params)
     conn.close()
     return True
 
-def createVisitor(msg):
+def createVisitor(msg, ipVisitante):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
@@ -78,12 +82,15 @@ def createVisitor(msg):
         # Buscamos si ya existe ese perfil
         cursor.execute(f'SELECT * FROM visitantes WHERE id = "{msg["id"]}"')
         rows = cursor.fetchall()
+        params = f'ID: {msg["id"]} | PASSWORD: {hash_password(msg["password"])} | NAME: {msg["name"]}'
         if rows:
+            generateRegister(cursor, conn, "Error", ipVisitante, params)
             conn.close()
             return False
         else:
             cursor.execute('INSERT INTO visitantes(id, name, password) VALUES(?, ?, ?)', visitante)
             conn.commit()
+            generateRegister(cursor, conn, "Crear", ipVisitante, params)
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
         print("Exception class is: ", er.__class__)
@@ -95,17 +102,20 @@ def createVisitor(msg):
     conn.close()
     return True
 
-def editVisitor(msg): 
+def editVisitor(msg, ipVisitante): 
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     # ID no se puede cambiar
     try:
+        params = f'ID: {msg["id"]} | PASSWORD: {hash_password(msg["password"])} | NAME: {msg["name"]} | newPASSWORD: {msg["new_password"]}'
         if check_password(cursor, msg["id"], msg["password"]):
             cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], hash_password(msg["new_password"]), msg["id"]))
             conn.commit()
+            generateRegister(cursor, conn, "Modificación", ipVisitante, params)
         else:
             print("El usuario y la contraseña no coinciden")
+            generateRegister(cursor, conn, "Error", ipVisitante, params)
             conn.close()
             return False
     except sqlite3.Error as er:
@@ -138,6 +148,22 @@ def check_password(cursor, id, key):
     print("Ese usuario no existe")
     return False
 
+
+def generateRegister(cursor, conn, action, ipVisitante, params):
+    print(f"Generando registro...")
+
+    timestamp = 'Timestamp: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+    try:
+        cursor.execute('INSERT INTO registros(timestamp, ip, action, params) VALUES(?, ?, ?, ?)', (timestamp, ipVisitante, action, params))
+        conn.commit()
+        print("Registro almacenado")
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+
 #######################################################
 ######################### API #########################
 #######################################################
@@ -169,7 +195,8 @@ def update():
 @app.route("/profile", methods=["DELETE"])
 def remove():
     print("Eliminando perfil mediante API")
-    if deleteVisitor(request.json):
+    # IPAddr = socket. gethostbyname(hostname)
+    if deleteVisitor(request.json, request.remote_addr):
         response = make_response(jsonify(RESPUESTA["0"]), 200)
         response.headers["Content-Type"] = "application/json"
         return response
