@@ -1,8 +1,9 @@
-﻿using Confluent.Kafka;
+using Confluent.Kafka;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Visitantes
 {
@@ -137,11 +138,18 @@ namespace Visitantes
 
             int dx = 0, dy = 0;
             Attraction objective = new Attraction();
+            
             for (int i = 0; dx == dy && dx == 0; i++)
             {
                 objective = attractions[i];
-                dx = objective.Coords.Item1 - Program.VisitorOwn.Coords.Item1;
-                dy = objective.Coords.Item2 - Program.VisitorOwn.Coords.Item2;
+                if(objective.Coords.Item1 == Program.VisitorOwn.Coords.Item1 && objective.Coords.Item2 == Program.VisitorOwn.Coords.Item2 && attractions.Last() == objective) {
+                    dx = -1;
+                    dy = 1;
+                    Program.UI.Invoke(Program.UI.AddMessageFunction, "No hay atracciones a las que moverse, movimiento aleatorio hacia -1,1", 0);
+                } else {
+                    dx = objective.Coords.Item1 - Program.VisitorOwn.Coords.Item1;
+                    dy = objective.Coords.Item2 - Program.VisitorOwn.Coords.Item2;   
+                }
             }
 
             int cx = 0, cy = 0;
