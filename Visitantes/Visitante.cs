@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Drawing;
 using System.Globalization;
@@ -72,6 +72,7 @@ namespace Visitantes
         }
         private void Editar_Click(object sender, EventArgs e)
         {
+            Connection.InitializeRegistryServer(IPValueRegistry.Text, (int)PortValueRegistry.Value);
             if (Program.VisitorOwn is null)
             {
                 Program.VisitorOwn = new Visitor
@@ -127,10 +128,15 @@ namespace Visitantes
 
         private void Salir_Click(object sender, EventArgs e)
         {
-            _wannaExit = true;
-            AddMessageToLog("Intentando salir del parque...", 1);
-            if(Program.VisitorOwn != null && Program.VisitorOwn.Exit())
+            
+            if (Program.VisitorOwn == null || Program.VisitorOwn.Coords == new Tuple<int, int>(0,0))
             {
+                AddMessageToLog("Bye bye", 2);
+            }
+            else if(Program.VisitorOwn.Exit())
+            {
+                _wannaExit = true;
+                AddMessageToLog("Intentando salir del parque...", 1);
                 VisitorStatus(true);
             }
         }
