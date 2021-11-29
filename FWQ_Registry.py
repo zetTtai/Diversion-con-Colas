@@ -173,7 +173,7 @@ app = Flask(__name__)
 @app.route("/profile", methods=["POST"])
 def create():
     print("Creando perfil mediante API")
-    if createVisitor(request.json):
+    if createVisitor(request.json, request.remote_addr):
         response = make_response(jsonify(RESPUESTA["0"]), 200)
         response.headers["Content-Type"] = "application/json"
         return response
@@ -184,7 +184,7 @@ def create():
 @app.route("/profile", methods=["PUT"])
 def update():
     print("Actualizando perfil mediante API")
-    if editVisitor(request.json):
+    if editVisitor(request.json, request.remote_addr):
         response = make_response(jsonify(RESPUESTA["0"]), 200)
         response.headers["Content-Type"] = "application/json"
         return response
@@ -195,7 +195,6 @@ def update():
 @app.route("/profile", methods=["DELETE"])
 def remove():
     print("Eliminando perfil mediante API")
-    # IPAddr = socket. gethostbyname(hostname)
     if deleteVisitor(request.json, request.remote_addr):
         response = make_response(jsonify(RESPUESTA["0"]), 200)
         response.headers["Content-Type"] = "application/json"
@@ -206,7 +205,7 @@ def remove():
 
 def connectionAPI():
     if __name__ == '__main__':
-        app.run(debug=False, port=API_PORT, ssl_context='adhoc')
+        app.run(debug=False, port=API_PORT)
 
 ##########################################################
 ######################### SOCKET #########################
@@ -221,21 +220,22 @@ def handle_client(conn, addr):
         msg = json.loads(msg)
         if msg["action"] == "create":
             print("Creando perfil de visitante...")
-            if(createVisitor(msg)):
+            # IPAddr = socket. gethostbyname(hostname
+            if(createVisitor(msg, addr)):
                 print("¡Hecho!")
                 respuesta = RESPUESTA["0"]
             else:
                 respuesta = RESPUESTA["2"]
         elif msg["action"] == "edit":
                 print("Editando perfil de visitante...")
-                if(editVisitor(msg)):
+                if(editVisitor(msg, addr)):
                     print("¡Hecho!")
                     respuesta = RESPUESTA["0"]
                 else:
                     respuesta = RESPUESTA["3"]
         elif msg["action"] == "delete":
             print("Borrando perfil de visitante...")
-            if(editVisitor(msg)):
+            if(deleteVisitor(msg, addr)):
                 print("¡Hecho!")
                 respuesta = RESPUESTA["0"]
             else:
