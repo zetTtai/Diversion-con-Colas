@@ -18,6 +18,9 @@
   "homepage": "https://github.com/zetTtai/Diversion-con-Colas#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "nodemon": "^2.0.15"
+    "knex": "^0.95.14",
+    "nodemon": "^2.0.15",
+    "path": "^0.12.7",
+    "sqlite3": "^5.0.2"
   }
 }
