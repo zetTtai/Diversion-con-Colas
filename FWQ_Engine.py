@@ -8,6 +8,9 @@ import threading
 import os
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
+from pyowm import OWM
+from pyowm.utils import config
+from pyowm.utils import timestamps
 
 HEADER = 2048
 PORT = 5050
@@ -54,6 +57,42 @@ RESPUESTA = {
         "message" : "Aforo maximo alcanzado, vuelva en otro momento"
     }
 }
+
+#### OPENWEATHERMAP #####
+
+def ExtractCiudades():
+    f = open("ciudades.json", "r")
+    return json.load(f)
+
+def WeatherOn(ciudad) -> int:
+    print(ciudad)
+    owm = OWM('64454792c7269edcb9f46285b11505f0')
+    mgr = owm.weather_manager()
+    observation = mgr.weather_at_place(ciudad)
+    w = observation.weather
+    return w.temperature('celsius')['temp']  # {'temp_max': 10.5, 'temp': 9.7, 'temp_min': 9.0}
+
+def OWMCalculate():
+    ciudades = ExtractCiudades()
+    ciudades_json = {
+        "ciudad1" : {
+            "nombre" : ciudades['ciudad1'],
+            "temp" : WeatherOn(ciudades['ciudad1'])
+        },
+        "ciudad2" : {
+            "nombre" : ciudades['ciudad2'],
+            "temp" : WeatherOn(ciudades['ciudad2'])
+        },
+        "ciudad3" : {
+            "nombre" : ciudades['ciudad3'],
+            "temp" : WeatherOn(ciudades['ciudad3'])
+        },
+        "ciudad4" : {
+            "nombre" : ciudades['ciudad4'],
+            "temp" : WeatherOn(ciudades['ciudad4'])
+        },
+    }
+    return ciudades_json
 
 # Función que se encarga de enviar el mapa actualizado al gestor de colas
 def send(msg, client):
