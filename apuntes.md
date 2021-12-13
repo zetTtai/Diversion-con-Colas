@@ -37,3 +37,16 @@ Logs estructurados en Engine (SIEM)
 Opción para conectarse mediante API / Empezar desde 0
 
 
+## Cifrado entre Engine y visitante
+
+Poner en visitante la clave privada de Engine para evitar el intercambio de clave privadas asimétrico.
+
+Orden normal
+
+- Enviar Engine a Visitante con cifrado asimétrico para pasar su clave pública
+- Después del intercambio se comunican con cifrado simétrico.
+
+Forma sencilla
+
+- Sólo cifrado simétrico --> Todos los visitantes comparten la misma clave en un archivo
+                         --> Engine tiene una clave que es la MISMA que tienen los visitantes

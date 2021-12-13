@@ -1,4 +1,5 @@
 const path = require('path')
+const fs = require('fs') // Para leer documentos
 var express = require('express')
 
 var app = express()
@@ -75,20 +76,14 @@ app.get('/fwq/logs', async function(pet, resp) {
 })
 
 
-app.get('/fwq/map', async function(pet, resp) {
+app.get('/fwq/map', function(pet, resp) {
    try {
-      obj = {}
-      attractions = await show('atracciones', 0)
-      visitors = await show('visitantes', 0)
-      obj = {
-         "atracciones" : attractions["datos"],
-         "visitantes" : visitors["datos"]
-      }
-      resp.status(200).send(obj)
+      var rawdata = fs.readFileSync("../mapa.json")
+      var mapa = JSON.parse(rawdata)
+      resp.status(200).send(mapa)
    }
-   catch(err) {
-      console.log(error)
-      resp.status(500).send({error:error})
+   catch(error) {
+      resp.status(404).send({error:"No hay un mapa generado"})
    }
 });
 
