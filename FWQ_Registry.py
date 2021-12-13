@@ -152,7 +152,7 @@ def check_password(cursor, id, key):
 def generateRegister(cursor, conn, action, ipVisitante, params):
     print(f"Generando registro...")
 
-    timestamp = 'Timestamp: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+    timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
     try:
         cursor.execute('INSERT INTO registros(timestamp, ip, action, params) VALUES(?, ?, ?, ?)', (timestamp, ipVisitante, action, params))
         conn.commit()
