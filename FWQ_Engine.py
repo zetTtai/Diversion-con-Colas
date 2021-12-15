@@ -230,6 +230,9 @@ def updateMap(userID, mapa, id, movX, movY):
                 visitante["X"] = coordenada[0]
                 visitante["Y"] = coordenada[1]
 
+    weather = OWMCalculate()
+    if not weather is None:
+        mapa['weather'] = weather
     mapa = json.dumps(mapa)
     return mapa
 
