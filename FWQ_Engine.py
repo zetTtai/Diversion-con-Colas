@@ -302,6 +302,7 @@ def procesarEntrada(producer, message, map, CONEX_ACTIVAS):
     else:
         print("No puede entrar si ya está dentro")
         producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
+    return map
 
 def procesarSalida(producer, message, CONEX_ACTIVAS):
     print(f"El visitante[{message['id']}] quiere salir")
@@ -341,6 +342,7 @@ def procesarMovimiento(producer, message, map):
     else:
         print("No puede realizar movimientos porque no está dentro del parque")
         producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
+    return map
 
 def restoreMap():
     # Comprobamos si hay información en el BACKUP
@@ -381,9 +383,9 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                         if ("status" in message) == False:
                             print("Leemos el mensaje:")
                             if message["action"] == "Movimiento":
-                                procesarMovimiento(producer, message, map)
+                                map = procesarMovimiento(producer, message, map)
                             elif message["action"] == "Entrar":
-                                procesarEntrada(producer, message, map, CONEX_ACTIVAS)
+                                map = procesarEntrada(producer, message, map, CONEX_ACTIVAS)
                             elif message["action"] == "Salir":
                                 procesarSalida(producer, message, CONEX_ACTIVAS)
                             else:
