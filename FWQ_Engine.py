@@ -12,6 +12,7 @@ from kafka import KafkaProducer
 from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
+from pyowm.weatherapi25 import weather
 
 HEADER = 2048
 PORT = 5050
@@ -22,10 +23,14 @@ FORMAT = 'utf-8'
 XSEC = 10
 # Variable global para controlar el tamaño del mapa
 MAXSIZE = 19
-# Variable global que controla las posiciones de todos los visitantes monitorizados: Lista de tuplas [(ID, X, Y)]
-POSICIONESVISITANTES = []
 # Variable global que contiene la dirección del backup del mapa del parque de atracciones
 BACKUP="mapa.json"
+# Variable global que contiene el mapa del parque de atracciones
+MAPA = {
+    "atracciones" : [],
+    "visitantes" : [],
+    "weather" : ""
+}
 
 RESPUESTA = {
     "0": {
@@ -103,6 +108,20 @@ def send(msg, client):
     client.send(send_length)
     client.send(message)
 
+def addVistante(idUser):
+    visitantes = []
+
+def removeVisitante(idUser):
+    visitantes = []
+
+def editVistante(idUser, newX, newY):
+    visitantes = []
+    for visitante in MAPA["visitantes"]:
+        if visitante["id"] == idUser:
+            visitante["X"] = newX
+            visitante["Y"] = newY
+        visitantes.append(visitante)
+
 def actualizarTiemposEspera(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
@@ -126,8 +145,7 @@ def actualizarTiemposEspera(msg):
     conn.close() # Cerramos base de datos
 
 def visitorInsidePark(id):
-    for visitante in POSICIONESVISITANTES:
-        print(visitante)
+    for visitante in MAPA["visitantes"]:
         if visitante[0] == id:
             return True
     return False
@@ -191,82 +209,43 @@ def actualizarAtracciones():
     atracciones.append(data)
     return atracciones # Con tiempo de espera != 0
 
-def updateMap(userID, mapa, id, movX, movY):
-    try:
-        mapa = json.loads(mapa)
-    except:
-        pass
+def updateMap(userID, id, movX, movY):
+
     coordenada = ()
 
     # Actualizamos a QUIEN va enviado el mapa
-    mapa["usuario"] = userID
+    MAPA["usuario"] = userID
 
     # Actualizamos tiempo de espera de las atracciones
-    mapa["atracciones"] = actualizarAtracciones()
+    MAPA["atracciones"] = actualizarAtracciones()
 
     # Actualizamos la lista de posiciones
     if id == 0 and movX == 0 and movY == 0: # Nuevo visitante
         visitantes = []
-        for visitante in POSICIONESVISITANTES:
+        for visitante in MAPA["visitantes"]:
             data = {
                 "id": visitante[0],
                 "X" : visitante[1],
                 "Y" : visitante[2]
             }
             visitantes.append(data)
-        # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante que está en POSICIONESVISITANTES
-        mapa = {
-            "usuario" : userID,
-            "atracciones" : mapa["atracciones"],
-            "visitantes" : visitantes
-        }
+        # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante
+        MAPA["visitantes"] = visitantes
     else:
-        for visitante in mapa['visitantes']:
-            if visitante[0] == id:
-                newX = movement(visitante[1], movX)
-                newY = movement(visitante[2], movY)
-                coordenada = (newX, newY)
-                POSICIONESVISITANTES[POSICIONESVISITANTES.index(visitante)] = (visitante[0], newX, newY)
-        # Actualizamos JSON
-        for visitante in POSICIONESVISITANTES:
+        print(MAPA["visitantes"])
+        for visitante in MAPA['visitantes']:
             if visitante["id"] == id:
-                visitante["X"] = coordenada[0]
-                visitante["Y"] = coordenada[1]
+                newX = movement(visitante["X"], movX)
+                newY = movement(visitante["Y"], movY)
+                coordenada = (newX, newY)
+                MAPA["visitantes"][MAPA["visitantes"].index((visitante["id"], visitante["X"], visitante["Y"]))] = (visitante["id"], newX, newY)
+        # Actualizamos JSON
+        for visitante in MAPA["visitantes"]:
+            if visitante[0] == id:
+                visitante_aux = (visitante[0], coordenada[0], coordenada[1])
+                visitante = visitante_aux
     weather = OWMCalculate()
-    if not weather is None:
-        mapa['weather'] = weather
-    mapa = json.dumps(mapa)
-    return mapa
-
-def initializeMap(userID):
-    # Formato del mensaje mapa {
-        # usuario : userID # Usuario al que va enviado el mapa
-        # atracciones : [{id, tiempo, X, Y} ...]
-        # visitantes : [{id, X, Y} ...]
-        # weather : { }
-    # }
-    atracciones = actualizarAtracciones()
-
-    visitantes = []
-    for visitante in POSICIONESVISITANTES:
-        data = {
-            "id": visitante[0],
-            "X" : visitante[1],
-            "Y" : visitante[2]
-        }
-        visitantes.append(data)
-
-    mapa = {
-        "usuario" : userID,
-        "atracciones" : atracciones,
-        "visitantes" : visitantes,
-        "weather" : OWMCalculate()
-    }
-    # Convertimos a JSON
-    print(mapa)
-    mapa = json.dumps(mapa)
-    print(mapa)
-    return mapa
+    MAPA['weather'] = weather
 
 def sendResponse(userID, code):
     respuesta = json.dumps(RESPUESTA[code])
@@ -279,23 +258,18 @@ def sendResponse(userID, code):
     }
 
     respuesta = json.dumps(respuesta)
-    return respuesta;
+    return respuesta
 
-def procesarEntrada(producer, message, map, CONEX_ACTIVAS):
+def procesarEntrada(producer, message, CONEX_ACTIVAS):
     print(f"El visitante[{message['id']}] quiere entrar")
     if not visitorInsidePark(message["id"]):
         #Validamos que esté registrado en la base de datos
         if validateUser(message["id"], message["password"]) == True:
-            # Añadimos visitante a POSICIONESVISITANTES e inicializamos su posición en (0,0)
-            POSICIONESVISITANTES.append((message["id"], 0, 0))
+            MAPA["visitantes"] = addVistante(message["id"])
             CONEX_ACTIVAS += 1
-            if map == "":
-                map = initializeMap(message["id"])
-            else:
-                map = updateMap(message["id"], map, 0, 0, 0)
-            # print(map)
+            updateMap(message["id"], 0, 0, 0)
             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
-            producer.send('mapa',map.encode(FORMAT))
+            producer.send('mapa', json.dumps(MAPA).encode(FORMAT))
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
         else:
@@ -304,7 +278,6 @@ def procesarEntrada(producer, message, map, CONEX_ACTIVAS):
     else:
         print("No puede entrar si ya está dentro")
         producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
-    return map
 
 def procesarSalida(producer, message, CONEX_ACTIVAS):
     print(f"El visitante[{message['id']}] quiere salir")
@@ -312,10 +285,10 @@ def procesarSalida(producer, message, CONEX_ACTIVAS):
     if visitorInsidePark(message["id"]) == True:
         #Validamos que esté registrado en la base de datos
         if validateUser(message["id"], message["password"]) == True:
-        # Eliminamos visitante de POSICIONESVISITANTES
-            for visitante in POSICIONESVISITANTES:
+        # Eliminamos visitante
+            for visitante in MAPA["visitantes"]:
                 if visitante[0] == message["id"]:
-                    POSICIONESVISITANTES.remove(visitante)
+                    removeVisitante(visitante)
                     break
             CONEX_ACTIVAS -= 1
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
@@ -328,15 +301,15 @@ def procesarSalida(producer, message, CONEX_ACTIVAS):
         # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
         producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
 
-def procesarMovimiento(producer, message, map):
+def procesarMovimiento(producer, message):
     print(f"El visitante[{message['id']}] ha enviado un movimiento")
     # Comprobar que el visitante no está dentro del parque
     if visitorInsidePark(message["id"]) == True:
         #Validamos que esté registrado en la base de datos
         if validateUser(message["id"], message["password"]) == True:
-            map = updateMap(message["id"], map, message["id"], message["X"], message["Y"])
+            updateMap(message["id"], message["id"], message["X"], message["Y"])
             # Enviamos el mapa actualizado
-            producer.send('mapa',map.encode(FORMAT))
+            producer.send('mapa',json.dumps(MAPA).encode(FORMAT))
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
         else:
             producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
@@ -344,25 +317,27 @@ def procesarMovimiento(producer, message, map):
     else:
         print("No puede realizar movimientos porque no está dentro del parque")
         producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
-    return map
 
 def restoreMap():
     # Comprobamos si hay información en el BACKUP
     if os.stat(BACKUP).st_size != 0:
+        print("Recuperando mapa")
         fichero = open(BACKUP, 'r')
-        map = json.load(fichero)
+        MAPA = json.loads(fichero.read())
         fichero.close()
-        # Actualizamos POSICIONESVISITANTES con los visitantes del fichero
-        if "visitantes" in map:
-            for visitante in map["visitantes"]:
-                POSICIONESVISITANTES.append((visitante["id"], visitante["X"], visitante["Y"]))
-        return map
-    return ""
+        # Actualizamos MAPA["visitantes"] con los visitantes del fichero
+        if "visitantes" in MAPA:
+            for visitante in MAPA["visitantes"]:
+                MAPA["visitantes"].append({
+                    "id" : visitante["id"], 
+                    "X"  : visitante["X"], 
+                    "Y"  : visitante["Y"]
+                })
 
-def backUpMap(map):
+def backUpMap():
+    print("Guardando mapa")
     fichero = open(BACKUP,"w")
-    print("Backup" + json.dumps(map))
-    fichero.write(json.dumps(map))
+    fichero.write(json.dumps(MAPA, indent=4))
     fichero.close()
 
 
@@ -370,7 +345,7 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     CONEX_ACTIVAS = 0
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
 
-    map = restoreMap()
+    restoreMap()
     start = time.time() * 1000
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
@@ -386,16 +361,16 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
                         if ("status" in message) == False:
                             print("Leemos el mensaje:")
                             if message["action"] == "Movimiento":
-                                map = procesarMovimiento(producer, message, map)
+                                procesarMovimiento(producer, message)
                             elif message["action"] == "Entrar":
-                                map = procesarEntrada(producer, message, map, CONEX_ACTIVAS)
+                                procesarEntrada(producer, message, CONEX_ACTIVAS)
                             elif message["action"] == "Salir":
                                 procesarSalida(producer, message, CONEX_ACTIVAS)
                             else:
                                 print("Action no controlada")
                                 producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
                             # Realizamos backup por cada acción que realizan los visitantes
-                            backUpMap(map)
+                            backUpMap()
                     else:
                         if visitorInsidePark(message["id"]) == False:
                             print("AFORO ALCANZADO")
