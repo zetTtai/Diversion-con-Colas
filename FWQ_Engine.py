@@ -66,7 +66,6 @@ def ExtractCiudades():
     return json.load(f)
 
 def WeatherOn(ciudad) -> int:
-    print(ciudad)
     owm = OWM('64454792c7269edcb9f46285b11505f0')
     mgr = owm.weather_manager()
     observation = mgr.weather_at_place(ciudad)
@@ -264,7 +263,9 @@ def initializeMap(userID):
         "weather" : OWMCalculate()
     }
     # Convertimos a JSON
+    print(mapa)
     mapa = json.dumps(mapa)
+    print(mapa)
     return mapa
 
 def sendResponse(userID, code):
@@ -292,6 +293,7 @@ def procesarEntrada(producer, message, map, CONEX_ACTIVAS):
                 map = initializeMap(message["id"])
             else:
                 map = updateMap(message["id"], map, 0, 0, 0)
+            # print(map)
             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
             producer.send('mapa',map.encode(FORMAT))
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
@@ -355,10 +357,11 @@ def restoreMap():
             for visitante in map["visitantes"]:
                 POSICIONESVISITANTES.append((visitante["id"], visitante["X"], visitante["Y"]))
         return map
-    return "{}"
+    return ""
 
 def backUpMap(map):
     fichero = open(BACKUP,"w")
+    print("Backup" + json.dumps(map))
     fichero.write(json.dumps(map))
     fichero.close()
 
