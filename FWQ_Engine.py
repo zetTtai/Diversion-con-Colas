@@ -1,4 +1,4 @@
-import socket 
+import socket
 import sys
 import time
 import sqlite3
@@ -6,6 +6,7 @@ import json
 import traceback
 import threading
 import os
+from typing import Collection
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 from pyowm import OWM
@@ -40,7 +41,7 @@ RESPUESTA = {
     "2": {
         "status" : "2",
         "message" : "Credenciales incorrectas, recuerde que debe estar registrado antes de entrar al parque."
-    }, 
+    },
 
     "3": {
         "status" : "3",
@@ -192,15 +193,18 @@ def actualizarAtracciones():
     return atracciones # Con tiempo de espera != 0
 
 def updateMap(userID, mapa, id, movX, movY):
-    mapa = json.loads(mapa)
+    try:
+        mapa = json.loads(mapa)
+    except:
+        pass
     coordenada = ()
 
     # Actualizamos a QUIEN va enviado el mapa
     mapa["usuario"] = userID
 
     # Actualizamos tiempo de espera de las atracciones
-    mapa["atracciones"] = actualizarAtracciones();
-    
+    mapa["atracciones"] = actualizarAtracciones()
+
     # Actualizamos la lista de posiciones
     if id == 0 and movX == 0 and movY == 0: # Nuevo visitante
         visitantes = []
@@ -218,18 +222,17 @@ def updateMap(userID, mapa, id, movX, movY):
             "visitantes" : visitantes
         }
     else:
-        for visitante in POSICIONESVISITANTES:
+        for visitante in mapa['visitantes']:
             if visitante[0] == id:
                 newX = movement(visitante[1], movX)
                 newY = movement(visitante[2], movY)
                 coordenada = (newX, newY)
                 POSICIONESVISITANTES[POSICIONESVISITANTES.index(visitante)] = (visitante[0], newX, newY)
         # Actualizamos JSON
-        for visitante in mapa["visitantes"]:
+        for visitante in POSICIONESVISITANTES:
             if visitante["id"] == id:
                 visitante["X"] = coordenada[0]
                 visitante["Y"] = coordenada[1]
-
     weather = OWMCalculate()
     if not weather is None:
         mapa['weather'] = weather
@@ -239,11 +242,12 @@ def updateMap(userID, mapa, id, movX, movY):
 def initializeMap(userID):
     # Formato del mensaje mapa {
         # usuario : userID # Usuario al que va enviado el mapa
-        # atracciones : [{id, tiempo, X, Y} ...] 
+        # atracciones : [{id, tiempo, X, Y} ...]
         # visitantes : [{id, X, Y} ...]
+        # weather : { }
     # }
     atracciones = actualizarAtracciones()
-    
+
     visitantes = []
     for visitante in POSICIONESVISITANTES:
         data = {
@@ -256,7 +260,8 @@ def initializeMap(userID):
     mapa = {
         "usuario" : userID,
         "atracciones" : atracciones,
-        "visitantes" : visitantes
+        "visitantes" : visitantes,
+        "weather" : OWMCalculate()
     }
     # Convertimos a JSON
     mapa = json.dumps(mapa)
@@ -268,7 +273,7 @@ def sendResponse(userID, code):
 
     respuesta = {
         "id" : userID,
-        "status" : respuesta["status"], 
+        "status" : respuesta["status"],
         "message" : respuesta["message"]
     }
 
@@ -344,14 +349,15 @@ def restoreMap():
         map = json.load(fichero)
         fichero.close()
         # Actualizamos POSICIONESVISITANTES con los visitantes del fichero
-        for visitante in map["visitantes"]:
-            POSICIONESVISITANTES.append((visitante["id"], visitante["X"], visitante["Y"]))
+        if "visitantes" in map:
+            for visitante in map["visitantes"]:
+                POSICIONESVISITANTES.append((visitante["id"], visitante["X"], visitante["Y"]))
         return map
-    return ""
+    return "{}"
 
 def backUpMap(map):
     fichero = open(BACKUP,"w")
-    fichero.write(map)
+    fichero.write(json.dumps(map))
     fichero.close()
 
 
