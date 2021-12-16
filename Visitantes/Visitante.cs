@@ -188,6 +188,12 @@ namespace Visitantes
                         Coords = new Tuple<int, int>(int.Parse(item["X"].ToString()), int.Parse(item["Y"].ToString()))
                     });
                 }
+                WaitingTimes.Rows.Clear();
+                foreach (var item in Program.Attractions)
+                {
+                    WaitingTimes.Rows.Add(item.Id, item.TiempoEspera);
+                }
+
                 Program.Visitors.Clear();
                 foreach (var item in json["visitantes"])
                 {
@@ -195,6 +201,11 @@ namespace Visitantes
                         Alias = item["id"].ToString(),
                         Coords = new Tuple<int, int>(int.Parse(item["X"].ToString()), int.Parse(item["Y"].ToString()))
                     });
+                }
+                Weather.Rows.Clear();
+                for(int i = 1; i <= 4; i++)
+                {
+                    Weather.Rows.Add(json["weather"]["ciudad" + i]["nombre"].ToString(), json["weather"]["ciudad" + i]["temp"].ToString());
                 }
                 ActualizarMapa();
             }

@@ -52,8 +52,16 @@
             this.VisitorAlias = new System.Windows.Forms.TextBox();
             this.Entrar = new System.Windows.Forms.Button();
             this.Editar = new System.Windows.Forms.Button();
+            this.WaitingTimes = new System.Windows.Forms.DataGridView();
+            this.ID = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.WaitTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Weather = new System.Windows.Forms.DataGridView();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueKafka)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueRegistry)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.WaitingTimes)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Weather)).BeginInit();
             this.SuspendLayout();
             // 
             // label2
@@ -200,7 +208,7 @@
             this.Logs.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
             this.Logs.Location = new System.Drawing.Point(741, 12);
             this.Logs.Name = "Logs";
-            this.Logs.Size = new System.Drawing.Size(771, 500);
+            this.Logs.Size = new System.Drawing.Size(522, 500);
             this.Logs.TabIndex = 8;
             // 
             // label5
@@ -289,12 +297,69 @@
             this.Editar.UseVisualStyleBackColor = false;
             this.Editar.Click += new System.EventHandler(this.Editar_Click);
             // 
+            // WaitingTimes
+            // 
+            this.WaitingTimes.AllowUserToAddRows = false;
+            this.WaitingTimes.AllowUserToDeleteRows = false;
+            this.WaitingTimes.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
+            this.WaitingTimes.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.WaitingTimes.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.ID,
+            this.WaitTime});
+            this.WaitingTimes.Location = new System.Drawing.Point(1269, 12);
+            this.WaitingTimes.Name = "WaitingTimes";
+            this.WaitingTimes.ReadOnly = true;
+            this.WaitingTimes.Size = new System.Drawing.Size(243, 361);
+            this.WaitingTimes.TabIndex = 22;
+            // 
+            // ID
+            // 
+            this.ID.HeaderText = "ID";
+            this.ID.Name = "ID";
+            this.ID.ReadOnly = true;
+            // 
+            // WaitTime
+            // 
+            this.WaitTime.HeaderText = "WaitTime";
+            this.WaitTime.Name = "WaitTime";
+            this.WaitTime.ReadOnly = true;
+            // 
+            // Weather
+            // 
+            this.Weather.AllowUserToAddRows = false;
+            this.Weather.AllowUserToDeleteRows = false;
+            this.Weather.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(31)))), ((int)(((byte)(35)))));
+            this.Weather.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.Weather.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.dataGridViewTextBoxColumn1,
+            this.dataGridViewTextBoxColumn2});
+            this.Weather.GridColor = System.Drawing.SystemColors.ControlLight;
+            this.Weather.Location = new System.Drawing.Point(1269, 383);
+            this.Weather.Name = "Weather";
+            this.Weather.ReadOnly = true;
+            this.Weather.Size = new System.Drawing.Size(243, 128);
+            this.Weather.TabIndex = 23;
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.HeaderText = "Ciudad";
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn2
+            // 
+            this.dataGridViewTextBoxColumn2.HeaderText = "Temperatura";
+            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            this.dataGridViewTextBoxColumn2.ReadOnly = true;
+            // 
             // Visitante
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(26)))), ((int)(((byte)(30)))));
-            this.ClientSize = new System.Drawing.Size(1524, 523);
+            this.ClientSize = new System.Drawing.Size(1524, 528);
+            this.Controls.Add(this.Weather);
+            this.Controls.Add(this.WaitingTimes);
             this.Controls.Add(this.Editar);
             this.Controls.Add(this.Entrar);
             this.Controls.Add(this.PortValueKafka);
@@ -322,6 +387,8 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.PortValueKafka)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.PortValueRegistry)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.WaitingTimes)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Weather)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -350,5 +417,11 @@
         private System.Windows.Forms.TextBox VisitorAlias;
         private System.Windows.Forms.Button Entrar;
         private System.Windows.Forms.Button Editar;
+        private System.Windows.Forms.DataGridView WaitingTimes;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ID;
+        private System.Windows.Forms.DataGridViewTextBoxColumn WaitTime;
+        private System.Windows.Forms.DataGridView Weather;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
     }
 }
