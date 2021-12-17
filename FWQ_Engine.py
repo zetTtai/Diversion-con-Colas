@@ -9,6 +9,8 @@ import os
 from typing import Collection
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
+import uuid
+import hashlib
 from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
@@ -55,7 +57,7 @@ RESPUESTA = {
 
     "4": {
         "status" : "4",
-        "message" : "No estas fuera del parque."
+        "message" : "Ya estas fuera del parque."
     },
 
     "5": {
@@ -146,8 +148,20 @@ def actualizarTiemposEspera(msg):
 
 def visitorInsidePark(id):
     for visitante in MAPA["visitantes"]:
-        if visitante[0] == id:
+        if visitante["id"] == id:
             return True
+    return False
+
+def check_password(cursor, id, key):
+    # Comprobamos que sea el usuario y la contraesña coincidan con lo guardado en la base de datos
+    cursor.execute(f'SELECT password FROM visitantes WHERE id = "{id}"')
+    row = cursor.fetchone()
+    # Si existe el visitante
+    if row:
+        password, salt = row[0].split(':')
+        # Comprobamos la contraseña pasada por parámetros (visitante[1]) con la almacenada en la base de datos (row[0])
+        return password == hashlib.sha256(salt.encode() + key.encode()).hexdigest()
+    print("Ese usuario no existe")
     return False
 
 def validateUser(id, password):
@@ -155,13 +169,9 @@ def validateUser(id, password):
     print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT * FROM visitantes WHERE id = ? AND password = ?', (id, password))
-        rows = cursor.fetchall()
-        conn.close()
-        if rows: # No está vacío
+        if check_password(cursor, id, password):
             return True
-        else:
-            return False
+        return False
     except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
         print("Exception class is: ", er.__class__)
@@ -211,8 +221,6 @@ def actualizarAtracciones():
 
 def updateMap(userID, id, movX, movY):
 
-    coordenada = ()
-
     # Actualizamos a QUIEN va enviado el mapa
     MAPA["usuario"] = userID
 
@@ -222,28 +230,31 @@ def updateMap(userID, id, movX, movY):
     # Actualizamos la lista de posiciones
     if id == 0 and movX == 0 and movY == 0: # Nuevo visitante
         visitantes = []
-        for visitante in MAPA["visitantes"]:
-            data = {
-                "id": visitante[0],
-                "X" : visitante[1],
-                "Y" : visitante[2]
-            }
-            visitantes.append(data)
-        # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante
+        if MAPA["visitantes"] is not None:
+            for visitante in MAPA["visitantes"]:
+                data = {
+                    "id": visitante["id"],
+                    "X" : visitante["X"],
+                    "Y" : visitante["Y"]
+                }
+                visitantes.append(data)
+            # Volvemos a montar el mapa pero esta vez añadiendo el nuevo visitante
         MAPA["visitantes"] = visitantes
     else:
-        print(MAPA["visitantes"])
+        print("Actualizando posición")
         for visitante in MAPA['visitantes']:
             if visitante["id"] == id:
-                newX = movement(visitante["X"], movX)
-                newY = movement(visitante["Y"], movY)
-                coordenada = (newX, newY)
-                MAPA["visitantes"][MAPA["visitantes"].index((visitante["id"], visitante["X"], visitante["Y"]))] = (visitante["id"], newX, newY)
+                # newX = movement(visitante["X"], movX)
+                # newY = movement(visitante["Y"], movY)
+                # coordenada = (newX, newY)
+                visitante["X"] = movement(visitante["X"], movX)
+                visitante["Y"] = movement(visitante["Y"], movY)
+    print(MAPA["visitantes"])
         # Actualizamos JSON
-        for visitante in MAPA["visitantes"]:
-            if visitante[0] == id:
-                visitante_aux = (visitante[0], coordenada[0], coordenada[1])
-                visitante = visitante_aux
+        # for visitante in MAPA["visitantes"]:
+        #     if visitante["id"] == id:
+        #         visitante_aux = (visitante["id"], coordenada[0], coordenada[1])
+        #         visitante = visitante_aux
     weather = OWMCalculate()
     MAPA['weather'] = weather
 
@@ -265,7 +276,14 @@ def procesarEntrada(producer, message, CONEX_ACTIVAS):
     if not visitorInsidePark(message["id"]):
         #Validamos que esté registrado en la base de datos
         if validateUser(message["id"], message["password"]) == True:
-            MAPA["visitantes"] = addVistante(message["id"])
+            visitante = {
+                "id" : message["id"],
+                "X"  : 0,
+                "Y"  : 0
+            }
+            MAPA["visitantes"].append(visitante)
+            print("AÑADIR")
+            print(MAPA["visitantes"])
             CONEX_ACTIVAS += 1
             updateMap(message["id"], 0, 0, 0)
             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
@@ -285,11 +303,12 @@ def procesarSalida(producer, message, CONEX_ACTIVAS):
     if visitorInsidePark(message["id"]) == True:
         #Validamos que esté registrado en la base de datos
         if validateUser(message["id"], message["password"]) == True:
-        # Eliminamos visitante
+            # Eliminamos visitante
             for visitante in MAPA["visitantes"]:
-                if visitante[0] == message["id"]:
-                    removeVisitante(visitante)
-                    break
+                if visitante["id"] == message["id"]:
+                    MAPA["visitantes"].remove(visitante)
+            print("ELIMINAR")
+            print(MAPA["visitantes"])
             CONEX_ACTIVAS -= 1
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
@@ -329,8 +348,8 @@ def restoreMap():
         if "visitantes" in MAPA:
             for visitante in MAPA["visitantes"]:
                 MAPA["visitantes"].append({
-                    "id" : visitante["id"], 
-                    "X"  : visitante["X"], 
+                    "id" : visitante["id"],
+                    "X"  : visitante["X"],
                     "Y"  : visitante["Y"]
                 })
 
