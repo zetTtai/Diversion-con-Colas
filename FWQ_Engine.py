@@ -244,17 +244,10 @@ def updateMap(userID, id, movX, movY):
         print("Actualizando posición")
         for visitante in MAPA['visitantes']:
             if visitante["id"] == id:
-                # newX = movement(visitante["X"], movX)
-                # newY = movement(visitante["Y"], movY)
-                # coordenada = (newX, newY)
                 visitante["X"] = movement(visitante["X"], movX)
                 visitante["Y"] = movement(visitante["Y"], movY)
+    print("ACTUALIZAR")
     print(MAPA["visitantes"])
-        # Actualizamos JSON
-        # for visitante in MAPA["visitantes"]:
-        #     if visitante["id"] == id:
-        #         visitante_aux = (visitante["id"], coordenada[0], coordenada[1])
-        #         visitante = visitante_aux
     weather = OWMCalculate()
     MAPA['weather'] = weather
 
