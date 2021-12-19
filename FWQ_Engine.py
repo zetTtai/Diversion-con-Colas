@@ -110,12 +110,6 @@ def send(msg, client):
     client.send(send_length)
     client.send(message)
 
-def addVistante(idUser):
-    visitantes = []
-
-def removeVisitante(idUser):
-    visitantes = []
-
 def editVistante(idUser, newX, newY):
     visitantes = []
     for visitante in MAPA["visitantes"]:
