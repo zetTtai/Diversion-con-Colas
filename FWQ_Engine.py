@@ -110,14 +110,6 @@ def send(msg, client):
     client.send(send_length)
     client.send(message)
 
-def editVistante(idUser, newX, newY):
-    visitantes = []
-    for visitante in MAPA["visitantes"]:
-        if visitante["id"] == idUser:
-            visitante["X"] = newX
-            visitante["Y"] = newY
-        visitantes.append(visitante)
-
 def actualizarTiemposEspera(msg):
     conn = sqlite3.connect('db/database.db')
     print(f"Establecida conexión con la base de datos")
