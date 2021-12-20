@@ -2,7 +2,14 @@ const path = require('path')
 const fs = require('fs') // Para leer documentos
 var express = require('express')
 const https = require('https')
-const port = 3001
+
+/*
+const ip = process.argv[2] ?? "127.0.0.1"
+const port = process.argv[3] ?? "3001"
+*/
+
+const ip = process.argv[2] 
+const port = process.argv[3]
 
 var app = express()
 app.use(express.json())
@@ -99,6 +106,6 @@ const httpsOptions = {
    cert: fs.readFileSync('./cert.pem')
 }
 
-const server = https.createServer(httpsOptions, app).listen(port, "127.0.0.1", () => {
-   console.log('server running at ' + port)
+const server = https.createServer(httpsOptions, app).listen(port, ip, () => {
+   console.log('Server running at ' + ip + ':' + port)
 });
