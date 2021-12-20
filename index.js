@@ -1,4 +1,5 @@
 const https = require('https')
+const { stringReplace } = require('string-replace-middleware')
 var express = require('express');
 
 const ip_listen = process.argv[2] ?? "127.0.0.1"; 
@@ -8,6 +9,11 @@ const port_api = process.argv[5] ?? 3001;
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var app = express()
+
+app.use(stringReplace({
+	'%%IP%%' : ip_listen,
+	'%%PORT%%' : port_listen
+}));
 
 app.get('/', function (req, res) {
     res.sendFile('public/index.html', { root: __dirname });
