@@ -91,17 +91,24 @@
     const BG_COLOR_ENABLED = ['#212529', '#212529', '#212529', '#212529'];
     const BG_COLOR_ATRACCIONES = '#ffc107';
     const APICall = async () => {
-        const response = await fetch('https://%%IP%%:%%PORT%%/map');
-        const json = await response.json(); //extract JSON from the http response
+        try {
+            const response = await fetch('https://%%IP%%:%%PORT%%/map');
+            const json = await response.json(); //extract JSON from the http response
+            console.log(json);
 
-        console.log(json);
+            if (response.ok) {
+                const visitors = json.visitantes;
+                const atracciones = json.atracciones;
+                const weather = json.weather;
 
-        const visitors = json.visitantes;
-        const atracciones = json.atracciones;
-        const weather = json.weather;
-
-        PopulateTables(visitors, atracciones, weather);
-        PopulateMap(visitors, atracciones, weather);
+                PopulateTables(visitors, atracciones, weather);
+                PopulateMap(visitors, atracciones, weather);
+            } else {
+                console.error("Se ha producido un error al obtener los datos de FWQ_Engine");
+            }
+        } catch (error) {
+            console.error("Parece que el FWQ_Frontend no está funcionando");
+        }
     }
 
     function PopulateTables(visitors, atracciones, weather) {

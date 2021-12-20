@@ -16,29 +16,43 @@ app.use(stringReplace({
 }));
 
 app.get('/', function (req, res) {
-    res.sendFile('public/index.html', { root: __dirname });
+    try {
+        res.sendFile('public/index.html', { root: __dirname });
+    } catch (error) {
+        console.log(error);   
+    }
 });
 
 app.get('/map', async function(req, res) {
-    var request = https.request({ 
-        host: ip_api, 
-        port: port_api,
-        path: '/fwq/map',
-        method: 'GET',
-        rejectUnauthorized: false,
-        requestCert: true,
-        agent: false
-      }, (response) => {
-        console.log('statusCode:', response.statusCode);
-        console.log('headers:', response.headers);
-      
-        response.on('data', (d) => {
-            process.stdout.write(d);
-            res.status(200).header({"content-type" : "application/json"}).send(d);
+    try {
+        var request = https.request({ 
+            host: ip_api, 
+            port: port_api,
+            path: '/fwq/map',
+            method: 'GET',
+            rejectUnauthorized: false,
+            requestCert: true,
+            agent: false
+          }, (response) => {
+            console.log('statusCode:', response.statusCode);
+            console.log('headers:', response.headers);
+          
+            response.on('data', (d) => {
+                process.stdout.write(d);
+                res.status(200).header({"content-type" : "application/json"}).send(d);
+            });
+
+            response.on('error', function(error) {
+                res.status(500).send(error);
+            });
+          }
+        ).on('error', (error) => { 
+            res.status(500).send(error); 
         });
-      }
-    );
-    request.end();
+        request.end();
+    } catch (error) {
+        res.status(500).send(error);
+    }
 })
 
 const fs = require('fs');
