@@ -108,7 +108,7 @@ def editVisitor(msg, ipVisitante):
     cursor = conn.cursor()
     # ID no se puede cambiar
     try:
-        params = f'ID: {msg["id"]} | PASSWORD: {hash_password(msg["password"])} | NAME: {msg["name"]} | newPASSWORD: {msg["new_password"]}'
+        params = f'ID: {msg["id"]} | PASSWORD: {hash_password(msg["password"])} | NAME: {msg["name"]} | newPASSWORD: {hash_password(msg["new_password"])}'
         if check_password(cursor, msg["id"], msg["password"]):
             cursor.execute('UPDATE visitantes SET name = ?, password = ? WHERE id = ?', (msg["name"], hash_password(msg["new_password"]), msg["id"]))
             conn.commit()
