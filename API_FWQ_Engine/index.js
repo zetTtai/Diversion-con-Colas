@@ -1,6 +1,15 @@
 const path = require('path')
 const fs = require('fs') // Para leer documentos
 var express = require('express')
+const https = require('https')
+
+/*
+const ip = process.argv[2] ?? "127.0.0.1"
+const port = process.argv[3] ?? "3001"
+*/
+
+const ip = process.argv[2] 
+const port = process.argv[3]
 
 var app = express()
 app.use(express.json())
@@ -78,15 +87,25 @@ app.get('/fwq/logs', async function(pet, resp) {
 
 app.get('/fwq/map', function(pet, resp) {
    try {
-      var rawdata = fs.readFileSync("../mapa.json")
-      var mapa = JSON.parse(rawdata)
-      resp.status(200).send(mapa)
+      var rawdata = fs.readFileSync("../mapa.json");
+      var mapa = JSON.parse(rawdata);
+      resp.status(200).send(mapa);
    }
    catch(error) {
-      resp.status(404).send({error:"No hay un mapa generado"})
+      resp.status(404).send({error:"No hay un mapa generado"});
    }
 });
 
+/*
 var listener = app.listen(process.env.PORT||3000, () => {
    console.log(`Servidor en el puerto ${listener.address().port}`);
+});*/
+
+const httpsOptions = {
+   key: fs.readFileSync('./key.pem'),
+   cert: fs.readFileSync('./cert.pem')
+}
+
+const server = https.createServer(httpsOptions, app).listen(port, ip, () => {
+   console.log('Server running at ' + ip + ':' + port)
 });
