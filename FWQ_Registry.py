@@ -151,10 +151,13 @@ def check_password(cursor, id, key):
 
 def generateRegister(cursor, conn, action, ipVisitante, params):
     print(f"Generando registro...")
-
+    # ipVisitante es una tupla
+    print(ipVisitante[0])
+    print(params)
+    print("==============================")
     timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
     try:
-        cursor.execute('INSERT INTO registros(timestamp, ip, action, params) VALUES(?, ?, ?, ?)', (timestamp, ipVisitante, action, params))
+        cursor.execute('INSERT INTO registros(timestamp, ip, action, params) VALUES(?, ?, ?, ?)', (timestamp, ipVisitante[0], action, params))
         conn.commit()
         print("Registro almacenado")
     except sqlite3.Error as er:
