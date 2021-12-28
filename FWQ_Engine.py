@@ -337,16 +337,18 @@ def backUpMap():
 def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     CONEX_ACTIVAS = 0
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
-
+    start = time.time()*1000
     restoreMap()
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
     while True:
         # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
         # Y Engine es CONSUMIDOR de este topic
-        consumer=KafkaConsumer('visitantes', group_id="engine", bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+        consumer=KafkaConsumer('visitantes', group_id="engine", bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
         for message in consumer:
             message = json.loads(message.value) # Convertimos a JSON
+            if "timestamp" not in message or message["timestamp"] < (start - 60*1000):
+                continue
             if MAX_CONEXIONES-CONEX_ACTIVAS > 0:
                 if ("status" in message) == False:
                     print("Leemos el mensaje:")

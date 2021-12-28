@@ -2,7 +2,7 @@
     "atracciones": [
         {
             "id": "atraccion1",
-            "tiempo": 123.93650793650794,
+            "tiempo": 174.7301587301587,
             "X": "2",
             "Y": "3"
         }
@@ -10,26 +10,26 @@
     "visitantes": [
         {
             "id": "#FF0000",
-            "X": 0,
-            "Y": 0
+            "X": 16,
+            "Y": 16
         }
     ],
     "weather": {
         "ciudad1": {
             "nombre": "London",
-            "temp": 10.17
+            "temp": 10.0
         },
         "ciudad2": {
             "nombre": "Miami",
-            "temp": 25.89
+            "temp": 25.77
         },
         "ciudad3": {
             "nombre": "New York",
-            "temp": 7.92
+            "temp": 7.87
         },
         "ciudad4": {
             "nombre": "Madrid",
-            "temp": 10.12
+            "temp": 10.01
         }
     },
     "usuario": "#FF0000"
