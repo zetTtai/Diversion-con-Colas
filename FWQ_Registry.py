@@ -1,3 +1,4 @@
+from flask import Flask, make_response, request, jsonify
 import socket 
 import threading
 import sys
@@ -5,15 +6,18 @@ import sqlite3
 import traceback
 import json
 #Práctica 3
-from flask import Flask, make_response, request, jsonify
+
 import uuid
 import hashlib
 import datetime
+import os
 
 HEADER = 2048
-SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'utf-8'
 FIRST = True
+CONFIG_FILE = "config.json"
+CONFIG = {}
+SERVER_SOCKET = None
 
 RESPUESTA = {
     "0": {
@@ -204,7 +208,7 @@ def remove():
 
 def connectionAPI():
     if __name__ == '__main__':
-        app.run(debug=False, port=API_PORT, ssl_context="adhoc")
+        app.run(debug=False, host=CONFIG["listen_ip"], port=CONFIG["listen_port_api"], ssl_context="adhoc")
 
 ##########################################################
 ######################### SOCKET #########################
@@ -219,7 +223,6 @@ def handle_client(conn, addr):
         msg = json.loads(msg)
         if msg["action"] == "create":
             print("Creando perfil de visitante...")
-            # IPAddr = socket. gethostbyname(hostname
             if(createVisitor(msg, addr)):
                 print("¡Hecho!")
                 respuesta = RESPUESTA["0"]
@@ -249,34 +252,46 @@ def handle_client(conn, addr):
     conn.close()
         
 def connectionSocket():
-    print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     while True:
-        conn, addr = server.accept()
-        CONEX_ACTIVAS = threading.active_count()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-        print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
-    
-def start():
-    server.listen()
-    threadSocket = threading.Thread(target=connectionSocket)
-    threadSocket.start()
-    threadAPI = threading.Thread(target=connectionAPI)
-    threadAPI.start()
+        try:
+            conn, addr = SERVER_SOCKET.accept()
+            CONEX_ACTIVAS = threading.active_count()
+            thread = threading.Thread(target=handle_client, args=(conn, addr))
+            thread.start()
+            print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
+        except Exception as e:
+            print(f"[ERROR] {e}")
 
 #########################################################
 ######################### MAIN ##########################
 #########################################################
 
-if(len(sys.argv) == 3):
-    API_PORT = int(sys.argv[2])
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    PORT = int(sys.argv[1])
-    ADDR = (SERVER, PORT)
-    print(ADDR)
-    server.bind(ADDR)
-    print("[STARTING] Servidor inicializándose...")
-    start()
+def main():
+    global CONFIG_FILE
+    global CONFIG
+    global SERVER_SOCKET
 
-else:
-    print ("Oops!. Parece que algo falló. Necesito estos argumentos: <Puerto_Escucha> <Puerto_Escucha_API>")
+    if not os.path.exists(CONFIG_FILE):
+        return
+    try:
+        print("Se ha detectado un fichero de configuración. Se procederá a cargarlo.")
+        fichero = open(CONFIG_FILE, "r")
+        CONFIG = json.load(fichero)['registry']
+        fichero.close()
+    except Exception as e:
+        print(f"Error al cargar el fichero de configuración: {e}")
+        return
+
+    SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    SERVER_SOCKET.bind((CONFIG['listen_ip'], CONFIG['listen_port_sockets']))
+    print("[STARTING REGISTRY] Servidor inicializándose...")
+    SERVER_SOCKET.listen()
+    print(f"[LISTENING] Socket a la escucha en {CONFIG['listen_ip']}:{CONFIG['listen_port_sockets']}\n API a la escucha en https://{CONFIG['listen_ip']}:{CONFIG['listen_port_api']}")
+
+    threadSocket = threading.Thread(target=connectionSocket)
+    threadSocket.start()
+    threadAPI = threading.Thread(target=connectionAPI)
+    threadAPI.start()
+
+if __name__ == "__main__":
+    main()

@@ -1,32 +1,27 @@
-import socket
-import sys
-import time
-import sqlite3
-import json
-import traceback
-import threading
-import os
-from typing import Collection
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
-import uuid
-import hashlib
 from pyowm import OWM
-from pyowm.utils import config
-from pyowm.utils import timestamps
-from pyowm.weatherapi25 import weather
+import traceback
+import threading
+import hashlib
+import sqlite3
+import socket
+import time
+import json
+import sys
+import os
 
 HEADER = 2048
-PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
-ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 # Variable global que controla cada cuantos X segundos se conecta a STE
 XSEC = 10
 # Variable global para controlar el tamaño del mapa
 MAXSIZE = 19
 # Variable global que contiene la dirección del backup del mapa del parque de atracciones
-BACKUP="mapa.json"
+BACKUP = "mapa.json"
+# Variable global que contiene la dirección de la configuración inicial del programa
+CONFIG_FILE = "config.json"
+CONFIG = {}
 # Variable global que contiene el mapa del parque de atracciones
 MAPA = {
     "atracciones" : [],
@@ -67,36 +62,33 @@ RESPUESTA = {
 }
 
 #### OPENWEATHERMAP #####
-
-def ExtractCiudades():
-    f = open("ciudades.json", "r")
-    return json.load(f)
-
-def WeatherOn(ciudad) -> int:
-    owm = OWM('64454792c7269edcb9f46285b11505f0')
+def WeatherOn(ciudad, api_key) -> int:
+    owm = OWM(api_key)
     mgr = owm.weather_manager()
     observation = mgr.weather_at_place(ciudad)
     w = observation.weather
     return w.temperature('celsius')['temp']  # {'temp_max': 10.5, 'temp': 9.7, 'temp_min': 9.0}
 
 def OWMCalculate():
-    ciudades = ExtractCiudades()
+    fichero = open(CONFIG_FILE, 'r')
+    WEATHER = json.load(fichero)['weather']
+    fichero.close()
     ciudades_json = {
         "ciudad1" : {
-            "nombre" : ciudades['ciudad1'],
-            "temp" : WeatherOn(ciudades['ciudad1'])
+            "nombre" : WEATHER['ciudad1'],
+            "temp" : WeatherOn(WEATHER['ciudad1'], WEATHER['api_key'])
         },
         "ciudad2" : {
-            "nombre" : ciudades['ciudad2'],
-            "temp" : WeatherOn(ciudades['ciudad2'])
+            "nombre" : WEATHER['ciudad2'],
+            "temp" : WeatherOn(WEATHER['ciudad2'], WEATHER['api_key'])
         },
         "ciudad3" : {
-            "nombre" : ciudades['ciudad3'],
-            "temp" : WeatherOn(ciudades['ciudad3'])
+            "nombre" : WEATHER['ciudad3'],
+            "temp" : WeatherOn(WEATHER['ciudad3'], WEATHER['api_key'])
         },
         "ciudad4" : {
-            "nombre" : ciudades['ciudad4'],
-            "temp" : WeatherOn(ciudades['ciudad4'])
+            "nombre" : WEATHER['ciudad4'],
+            "temp" : WeatherOn(WEATHER['ciudad4'], WEATHER['api_key'])
         },
     }
     return ciudades_json
@@ -268,7 +260,7 @@ def procesarEntrada(producer, message, CONEX_ACTIVAS):
             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
             producer.send('mapa', json.dumps(MAPA).encode(FORMAT))
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
-            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", CONFIG['max_connections']-CONEX_ACTIVAS)
         else:
             producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
             print(f"El visitante[{message['id']}] NO está registrado")
@@ -290,7 +282,7 @@ def procesarSalida(producer, message, CONEX_ACTIVAS):
             print(MAPA["visitantes"])
             CONEX_ACTIVAS -= 1
             producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
-            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", CONFIG['max_connections']-CONEX_ACTIVAS)
         else:
             producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
             print(f"El visitante[{message['id']}] NO está registrado")
@@ -392,31 +384,34 @@ def connectionEngineSTE(SERVER_STE, PORT_STE):
                 print(f"No se ha podido conectar con STE en [{ADDR_STE}]")
                 start = time.time()
 
-def start(SERVER_KAFKA, PORT_KAFKA, SERVER_STE, PORT_STE, MAX_CONEXIONES):
-    server.listen()
-    print(f"[LISTENING] Servidor a la escucha en {SERVER}")
+########## MAIN ##########
 
-    threadKafka = threading.Thread(target=connectionEngineKafka, args=(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES))
-    threadSTE = threading.Thread(target=connectionEngineSTE, args=(SERVER_STE, PORT_STE))
+def main():
+    global CONFIG_FILE
+    global CONFIG
+
+    if not os.path.exists(CONFIG_FILE):
+        return
+    try:
+        print("Se ha detectado un fichero de configuración. Se procederá a cargarlo.")
+        fichero = open(CONFIG_FILE, "r")
+        CONFIG = json.load(fichero)['engine']
+        fichero.close()
+    except Exception as e:
+        print(f"Error al cargar el fichero de configuración: {e}")
+        return
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((CONFIG['listen_ip'], CONFIG['listen_port']))
+    print("[STARTING ENGINE] Servidor inicializándose...")
+    server.listen()
+    print(f"[LISTENING] Servidor a la escucha en {CONFIG['listen_ip']}:{CONFIG['listen_port']}")
+
+    threadKafka = threading.Thread(target=connectionEngineKafka, args=(CONFIG['kafka_ip'], CONFIG['kafka_port'], CONFIG['max_connections']))
+    threadSTE = threading.Thread(target=connectionEngineSTE, args=(CONFIG['ste_ip'], CONFIG['ste_port']))
 
     threadKafka.start()
     threadSTE.start()
 
-########## MAIN ##########
-
-if  (len(sys.argv) == 6):
-    SERVER_KAFKA = sys.argv[1]
-    PORT_KAFKA = int(sys.argv[2])
-
-    SERVER_STE = sys.argv[3]
-    PORT_STE = int(sys.argv[4])
-
-    MAX_CONEXIONES = int(sys.argv[5])
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(ADDR)
-
-    print("[STARTING ENGINE] Servidor inicializándose...")
-    start(SERVER_KAFKA, PORT_KAFKA, SERVER_STE, PORT_STE, MAX_CONEXIONES)
-else:
-    print ("Oops!. Parece que algo falló.\nNecesito estos argumentos:<ServerIP_FAKFA> <Puerto_FAKFA> <SERVERIP_STE> <PUERTO_STE> <Nº MAX VISITANTES>")
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,27 @@
+{
+    "engine" : {
+        "listen_ip" : "192.168.0.12",
+        "listen_port" : 5050,
+
+        "kafka_ip" : "192.168.0.12",
+        "kafka_port" : 9092,
+
+        "ste_ip" : "192.168.0.12",
+        "ste_port" : 9001,
+
+        "max_connections" : 10
+    },
+    "registry" : {
+        "listen_ip" : "192.168.0.12",
+        "listen_port_sockets" : 9999,
+        "listen_port_api" : 9998
+    },
+    "weather" : {
+        "ciudad1" : "London",
+        "ciudad2" : "Miami",
+        "ciudad3" : "New York",
+        "ciudad4" : "Madrid",
+
+        "api_key" : "64454792c7269edcb9f46285b11505f0"
+    }
+}
