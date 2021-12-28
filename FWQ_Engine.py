@@ -186,6 +186,7 @@ def actualizarAtracciones():
         conn.close()
         return atracciones #Vacio
     conn.close()
+    data = {}
     for row in rows:
         position = row[2].split(' ')
         data = {
@@ -229,14 +230,15 @@ def updateMap(userID, id, movX, movY):
     weather = OWMCalculate()
     MAPA['weather'] = weather
 
-def sendResponse(userID, code):
+def sendResponse(userID, code, timestamp):
     respuesta = json.dumps(RESPUESTA[code])
     respuesta = json.loads(respuesta)
 
     respuesta = {
         "id" : userID,
         "status" : respuesta["status"],
-        "message" : respuesta["message"]
+        "message" : respuesta["message"],
+        "timestamp_request" : timestamp
     }
 
     respuesta = json.dumps(respuesta)
@@ -259,14 +261,14 @@ def procesarEntrada(producer, message, CONEX_ACTIVAS):
             updateMap(message["id"], 0, 0, 0)
             # El topic mapa será el que contenga toda la información del mapa que luego los visitantes CONSUMIRAN
             producer.send('mapa', json.dumps(MAPA).encode(FORMAT))
-            producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "0", message['timestamp']).encode(FORMAT))
             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", CONFIG['max_connections']-CONEX_ACTIVAS)
         else:
-            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "2", message['timestamp']).encode(FORMAT))
             print(f"El visitante[{message['id']}] NO está registrado")
     else:
         print("No puede entrar si ya está dentro")
-        producer.send('visitantes', sendResponse(message["id"], "3").encode(FORMAT))
+        producer.send('visitantes', sendResponse(message["id"], "3", message['timestamp']).encode(FORMAT))
 
 def procesarSalida(producer, message, CONEX_ACTIVAS):
     print(f"El visitante[{message['id']}] quiere salir")
@@ -281,15 +283,15 @@ def procesarSalida(producer, message, CONEX_ACTIVAS):
             print("ELIMINAR")
             print(MAPA["visitantes"])
             CONEX_ACTIVAS -= 1
-            producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "0", message['timestamp']).encode(FORMAT))
             print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", CONFIG['max_connections']-CONEX_ACTIVAS)
         else:
-            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "2", message['timestamp']).encode(FORMAT))
             print(f"El visitante[{message['id']}] NO está registrado")
     else:
         print("No puede salir si ya esta fuera")
         # producer.send('mapa',"Ya estás fuera del parque.".encode(FORMAT))
-        producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
+        producer.send('visitantes', sendResponse(message["id"], "4", message['timestamp']).encode(FORMAT))
 
 def procesarMovimiento(producer, message):
     print(f"El visitante[{message['id']}] ha enviado un movimiento")
@@ -300,15 +302,16 @@ def procesarMovimiento(producer, message):
             updateMap(message["id"], message["id"], message["X"], message["Y"])
             # Enviamos el mapa actualizado
             producer.send('mapa',json.dumps(MAPA).encode(FORMAT))
-            producer.send('visitantes', sendResponse(message["id"], "0").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "0", message['timestamp']).encode(FORMAT))
         else:
-            producer.send('visitantes', sendResponse(message["id"], "2").encode(FORMAT))
+            producer.send('visitantes', sendResponse(message["id"], "2", message['timestamp']).encode(FORMAT))
             print(f"El visitante[{message['id']}] NO está registrado")
     else:
         print("No puede realizar movimientos porque no está dentro del parque")
-        producer.send('visitantes', sendResponse(message["id"], "4").encode(FORMAT))
+        producer.send('visitantes', sendResponse(message["id"], "4", message['timestamp']).encode(FORMAT))
 
 def restoreMap():
+    global MAPA
     # Comprobamos si hay información en el BACKUP
     if os.stat(BACKUP).st_size != 0:
         print("Recuperando mapa")
@@ -316,13 +319,13 @@ def restoreMap():
         MAPA = json.loads(fichero.read())
         fichero.close()
         # Actualizamos MAPA["visitantes"] con los visitantes del fichero
-        if "visitantes" in MAPA:
-            for visitante in MAPA["visitantes"]:
-                MAPA["visitantes"].append({
-                    "id" : visitante["id"],
-                    "X"  : visitante["X"],
-                    "Y"  : visitante["Y"]
-                })
+        # if "visitantes" in MAPA:
+        #     for visitante in MAPA["visitantes"]:
+        #         MAPA["visitantes"].append({
+        #             "id" : visitante["id"],
+        #             "X"  : visitante["X"],
+        #             "Y"  : visitante["Y"]
+        #         })
 
 def backUpMap():
     print("Guardando mapa")
@@ -336,35 +339,32 @@ def connectionEngineKafka(SERVER_KAFKA, PORT_KAFKA, MAX_CONEXIONES):
     print(f"{CONEX_ACTIVAS} / {MAX_CONEXIONES}")
 
     restoreMap()
-    start = time.time() * 1000
     # Creamos el Productor
     producer= KafkaProducer(bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}')
     while True:
         # Recibimos un mensaje de 'visitantes' donde se almacenan los movimientos de los visitantes
         # Y Engine es CONSUMIDOR de este topic
-        consumer=KafkaConsumer('visitantes',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+        consumer=KafkaConsumer('visitantes', group_id="engine", bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
         for message in consumer:
             message = json.loads(message.value) # Convertimos a JSON
-            if "timestamp" in message:
-                if  message["timestamp"] - start > 0.0:
-                    if MAX_CONEXIONES-CONEX_ACTIVAS > 0:
-                        if ("status" in message) == False:
-                            print("Leemos el mensaje:")
-                            if message["action"] == "Movimiento":
-                                procesarMovimiento(producer, message)
-                            elif message["action"] == "Entrar":
-                                procesarEntrada(producer, message, CONEX_ACTIVAS)
-                            elif message["action"] == "Salir":
-                                procesarSalida(producer, message, CONEX_ACTIVAS)
-                            else:
-                                print("Action no controlada")
-                                producer.send('mapa', sendResponse(message["id"], "1").encode(FORMAT))
-                            # Realizamos backup por cada acción que realizan los visitantes
-                            backUpMap()
+            if MAX_CONEXIONES-CONEX_ACTIVAS > 0:
+                if ("status" in message) == False:
+                    print("Leemos el mensaje:")
+                    if message["action"] == "Movimiento":
+                        procesarMovimiento(producer, message)
+                    elif message["action"] == "Entrar":
+                        procesarEntrada(producer, message, CONEX_ACTIVAS)
+                    elif message["action"] == "Salir":
+                        procesarSalida(producer, message, CONEX_ACTIVAS)
                     else:
-                        if visitorInsidePark(message["id"]) == False:
-                            print("AFORO ALCANZADO")
-                            producer.send('visitantes', sendResponse(message["id"], "5").encode(FORMAT))
+                        print("Action no controlada")
+                        producer.send('mapa', sendResponse(message["id"], "1", message['timestamp']).encode(FORMAT))
+                    # Realizamos backup por cada acción que realizan los visitantes
+                    backUpMap()
+            else:
+                if visitorInsidePark(message["id"]) == False:
+                    print("AFORO ALCANZADO")
+                    producer.send('visitantes', sendResponse(message["id"], "5", message['timestamp']).encode(FORMAT))
 
 # Función que se encarga de actualizar los tiempos de espera de las atracciones
 def connectionEngineSTE(SERVER_STE, PORT_STE):
@@ -408,7 +408,7 @@ def main():
     print(f"[LISTENING] Servidor a la escucha en {CONFIG['listen_ip']}:{CONFIG['listen_port']}")
 
     threadKafka = threading.Thread(target=connectionEngineKafka, args=(CONFIG['kafka_ip'], CONFIG['kafka_port'], CONFIG['max_connections']))
-    threadSTE = threading.Thread(target=connectionEngineSTE, args=(CONFIG['ste_ip'], CONFIG['ste_port']))
+    threadSTE   = threading.Thread(target=connectionEngineSTE,   args=(CONFIG['ste_ip'],   CONFIG['ste_port']))
 
     threadKafka.start()
     threadSTE.start()
