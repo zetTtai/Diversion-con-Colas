@@ -1,15 +1,17 @@
 import socket 
-import sys
 import threading
 import json
 import random
 import time
 from kafka import KafkaConsumer
+import os
 
 HEADER = 2048
-SERVER = socket.gethostbyname(socket.gethostname())
+SERVER = None
 FORMAT = 'utf-8'
 FILE = "DATA.json"
+CONFIG_FILE = "config.json"
+CONFIG = {}
 
 # Función que escribe en el fichero donde se guardan los datos de las atracciones
 def updateFile(msg):
@@ -87,9 +89,10 @@ def handle_client(conn, addr):
     conn.close()
 
 def connectionSTEtoEngine():
+    global SERVER
     print("\n[Esperando conexión con ENGINE]")
     while True:
-        conn, addr = server.accept()
+        conn, addr = SERVER.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
 
@@ -105,7 +108,8 @@ def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
                     updateFile(message)
 
 def start(SERVER_KAFKA, PORT_KAFKA):
-    server.listen()
+    global SERVER
+    SERVER.listen()
     print(f"[LISTENING] Servidor a la escucha en {SERVER}")
     # Escuchamos indefinidamente
     threadEngine = threading.Thread(target=connectionSTEtoEngine, args=())
@@ -114,18 +118,36 @@ def start(SERVER_KAFKA, PORT_KAFKA):
     threadEngine.start()
     threadSensor.start()
 
-########## MAIN ##########
+#########################################################
+######################### MAIN ##########################
+#########################################################
 
-if  (len(sys.argv) == 4):
-    SERVER_KAFKA = sys.argv[1]
-    PORT_KAFKA = int(sys.argv[2])
+def main():
+    global CONFIG_FILE
+    global CONFIG
+    global SERVER
 
-    PORT = int(sys.argv[3])
-    ADDR = (SERVER, PORT)
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(ADDR)
+    if not os.path.exists(CONFIG_FILE):
+        return
+    try:
+        print("Se ha detectado un fichero de configuración. Se procederá a cargarlo.")
+        fichero = open(CONFIG_FILE, "r")
+        CONFIG = json.load(fichero)
+        fichero.close()
+    except Exception as e:
+        print(f"Error al cargar el fichero de configuración: {e}")
+        return
 
-    print("[STARTING WTS] Servidor inicializándose...")
-    start(SERVER_KAFKA, PORT_KAFKA)
-else:
-    print ("Oops!. Parece que algo falló.\nNecesito estos argumentos:<ServerIP_FAKFA> <Puerto_FAKFA> <Puerto_Escucha>")
+    SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    SERVER.bind((CONFIG['listen_ip'], CONFIG['listen_port']))
+    print("[STARTING STE] Servidor inicializándose...")
+    SERVER.listen()
+    print(f"[LISTENING] STE a la escucha en {CONFIG['listen_ip']}:{CONFIG['listen_port']}")
+
+    threadEngine = threading.Thread(target=connectionSTEtoEngine, args=())
+    threadSensor = threading.Thread(target=connectionSTEtoSensor, args=(CONFIG['kafka_ip'], CONFIG['kafka_port']))
+    threadEngine.start()
+    threadSensor.start()
+
+if __name__ == "__main__":
+    main()
