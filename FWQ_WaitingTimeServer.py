@@ -99,13 +99,17 @@ def connectionSTEtoEngine():
 def connectionSTEtoSensor(SERVER_KAFKA, PORT_KAFKA):
     start = time.time()*1000
     while True:
-        consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
-        for message in consumer:
-            message = json.loads(message.value)
-            if "timestamp" in message:
-                if message["timestamp"] - start > 0.0:
-                    print("Leyendo mensaje")
-                    updateFile(message)
+        try:
+            consumer=KafkaConsumer('sensor',bootstrap_servers=f'{SERVER_KAFKA}:{PORT_KAFKA}',auto_offset_reset='earliest')
+            for message in consumer:
+                message = json.loads(message.value)
+                if "timestamp" in message:
+                    if message["timestamp"] - start > 0.0:
+                        print("Leyendo mensaje")
+                        updateFile(message)
+        except Exception as e:
+            print(f"Error al conectar con Kafka: {e}")
+            time.sleep(5)
 
 def start(SERVER_KAFKA, PORT_KAFKA):
     global SERVER
