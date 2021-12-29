@@ -172,7 +172,7 @@ def movement(origin, mov):
 def actualizarAtracciones():
     atracciones = []
     conn = sqlite3.connect('db/database.db')
-    print(f"Establecida conexión con la base de datos")
+    # print(f"Establecida conexión con la base de datos")
     cursor = conn.cursor()
     try:
         cursor.execute(f'SELECT * FROM atracciones WHERE wait_time IS NOT 0')

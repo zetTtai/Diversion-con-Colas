@@ -10,26 +10,26 @@
     "visitantes": [
         {
             "id": "#FF0000",
-            "X": 16,
-            "Y": 16
+            "X": 4,
+            "Y": 4
         }
     ],
     "weather": {
         "ciudad1": {
             "nombre": "London",
-            "temp": 10.0
+            "temp": 14.35
         },
         "ciudad2": {
             "nombre": "Miami",
-            "temp": 25.77
+            "temp": 22.86
         },
         "ciudad3": {
             "nombre": "New York",
-            "temp": 7.87
+            "temp": 5.23
         },
         "ciudad4": {
             "nombre": "Madrid",
-            "temp": 10.01
+            "temp": 12.0
         }
     },
     "usuario": "#FF0000"
